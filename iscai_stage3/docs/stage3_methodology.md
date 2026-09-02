@@ -12,11 +12,19 @@ classes, future states, and Stage-2 truth sidecars are evaluator-only.
 
 ## 2. Scientific question
 
-Can PC-FMCW measurement uncertainty be used to activate multiple association
-hypotheses only when ambiguity is both statistically significant and relevant
-to downstream trajectory-to-beam/ADB decisions?
+Can PC-FMCW measurement uncertainty improve multidimensional Hough tracklet
+initialization and activate multiple association hypotheses only when ambiguity
+is both statistically significant and relevant to downstream decisions?
 
-The primary hypothesis is that adaptive branching can approach fixed-depth MHT
+### Terminology
+
+`MDHT` denotes **Multidimensional Hough Transform**. The phrase
+**Multi-Hypothesis Tracking** is always written in full and is never abbreviated
+as MHT in this project. This avoids the acronym collision present in parts of
+the tracking literature.
+
+The primary hypothesis is that adaptive branching can approach fixed-depth
+Multi-Hypothesis Tracking
 robustness under ambiguous detections with lower average hypothesis count and
 runtime. A secondary hypothesis is that downstream-aware pruning improves beam
 and ADB risk without necessarily improving conventional tracking error.
@@ -36,7 +44,47 @@ position and its covariance are transformed from the time-varying `Ht` frame to
 the common `H0` frame before temporal association. Range, azimuth, and elevation
 covariance is propagated with the full first-order Jacobian.
 
-## 4. Association model
+## 4. Multidimensional Hough initialization
+
+For the constant-velocity initialization model in `H0`, a trajectory is
+parameterized at reference time `t_ref` by
+
+\[
+\xi=[x_0,y_0,v_x,v_y]^\top,
+\qquad
+p(t;\xi)=
+\begin{bmatrix}x_0\\y_0\end{bmatrix}
++(t-t_{ref})
+\begin{bmatrix}v_x\\v_y\end{bmatrix}.
+\]
+
+The standard MDHT baseline uses fixed parameter-space bins and unit votes from
+compatible detections. The proposed probabilistic variant uses soft votes
+
+\[
+w_{i,t}(\xi)=
+\exp\left[-\frac{1}{2}
+r_{i,t}(\xi)^\top
+S_{i,t}(\xi)^{-1}
+r_{i,t}(\xi)\right],
+\]
+
+where `r` is the position residual and `S` combines the propagated Stage-2
+measurement covariance with declared model/process uncertainty. Votes are
+normalized per detection so a high-uncertainty measurement does not contribute
+arbitrarily more total mass merely because it covers more bins.
+
+The initial implementation is two-dimensional because road-plane motion is the
+identifiable component in the available observation history. Elevation is
+retained in the measurement artifact and may be used for gating, but a larger
+Hough parameter space is admitted only if identifiability and computational
+cost are demonstrated. Bin widths, parameter limits, peak suppression, and the
+minimum support count are selected on validation scenarios only.
+
+MDHT produces anonymous tracklet proposals. It must never receive WOMD IDs,
+object classes, future states, or evaluator truth sidecars.
+
+## 5. Association model
 
 For predicted track `j` and detection `i`, define innovation and covariance
 
@@ -57,7 +105,7 @@ association log-scores include the normalized Gaussian likelihood, detection
 probability, and clutter density. All terms and thresholds must be versioned in
 configuration; none may be fitted on the evaluation split.
 
-## 5. Association ambiguity
+## 6. Association ambiguity
 
 Normalize the feasible association scores, including the missed-detection
 hypothesis, into probabilities `p_j,i,t`. Define normalized entropy
@@ -72,22 +120,23 @@ with entropy zero when only one hypothesis is feasible. Branching is activated
 when entropy exceeds `tau_entropy`; otherwise the GNN assignment is retained.
 The threshold is selected on validation data only.
 
-## 6. Proposed DASH-Track hypothesis
+## 7. Proposed DASH-Track hypothesis
 
 **DASH-Track** is a working name for Downstream-Aware Sensing-Hypothesis
 Tracking. It consists of:
 
-1. CRLB/covariance-conditioned gating and likelihoods.
-2. Entropy-triggered association branching.
-3. Fixed `K_max` and `N_scan` controls for bounded computation.
-4. Hypothesis merging when state distributions and downstream actions are
+1. Standard or covariance-weighted MDHT tracklet initialization.
+2. CRLB/covariance-conditioned gating and likelihoods.
+3. Entropy-triggered association branching.
+4. Fixed `K_max` and `N_scan` controls for bounded computation.
+5. Hypothesis merging when state distributions and downstream actions are
    equivalent within declared tolerances.
-5. Propagation of association mixtures rather than only the MAP identity.
+6. Propagation of association mixtures rather than only the MAP identity.
 
 The first two components are the core Stage-3 proposal. Downstream-aware
 merging is evaluated as a separate extension so its contribution is measurable.
 
-## 7. Downstream relevance
+## 8. Downstream relevance
 
 For hypothesis `h`, let the later frozen Stage-4/5/6 stack produce a predicted
 beam-coverage distribution and ADB risk vector `q_h`. Two tracking hypotheses
@@ -104,32 +153,40 @@ or RL pruning is outside the Stage-3 primary experiment. To avoid circular
 evaluation, downstream pruning parameters are tuned on validation scenarios and
 the final downstream evaluator remains frozen on the test split.
 
-## 8. Required baselines
+## 9. Required baselines
 
 1. Oracle association, evaluator-only upper bound.
 2. Euclidean GNN.
 3. Mahalanobis/CRLB-aware GNN.
-4. Soft probabilistic association (JPDA/BP-family baseline).
-5. Fixed-depth MHT with identical motion and measurement models.
-6. Entropy-triggered branching without downstream pruning.
-7. DASH-Track with downstream-aware merging.
+4. Standard fixed-bin MDHT followed by CRLB-aware GNN.
+5. SNR-weighted MDHT followed by CRLB-aware GNN.
+6. Covariance-weighted probabilistic MDHT followed by CRLB-aware GNN.
+7. Soft probabilistic association (JPDA/BP-family baseline).
+8. Fixed-depth Multi-Hypothesis Tracking with identical models.
+9. Entropy-triggered branching without downstream pruning.
+10. DASH-Track with downstream-aware merging.
 
 All non-association components must be held constant when comparing methods.
 
-## 9. Ablation matrix
+## 10. Ablation matrix
 
 | Experiment | CRLB covariance | Entropy trigger | Multiple hypotheses | Downstream merging |
 |---|---:|---:|---:|---:|
 | GNN-E | No | No | No | No |
 | GNN-C | Yes | No | No | No |
-| Fixed MHT | Yes | No | Yes | No |
+| MDHT-GNN | Yes | No | No | No |
+| Prob-MDHT-GNN | Yes | No | No | No |
+| Fixed multi-hypothesis | Yes | No | Yes | No |
 | Adaptive | Yes | Yes | Yes | No |
 | DASH-Track | Yes | Yes | Yes | Yes |
 
 Additional ablations vary entropy threshold, `K_max`, `N_scan`, covariance
 scaling, false-alarm density, detection probability, and SNR.
 
-## 10. Metrics
+MDHT-specific metrics include proposal recall/precision, parameter error, peak
+rank, accumulator sparsity, initialization latency, and memory consumption.
+
+## 11. Metrics
 
 Tracking metrics include GOSPA, association accuracy, ID switches,
 fragmentation, track recall/precision, state RMSE, NLL, NEES/coverage, runtime,
@@ -143,10 +200,13 @@ Results must be paired by scenario and random seed. Report confidence intervals
 and paired effect sizes; do not infer improvement from means alone. Clean and
 degraded conditions use identical scenario splits.
 
-## 11. Failure and falsification criteria
+## 12. Failure and falsification criteria
 
-The primary hypothesis is rejected if adaptive branching does not improve the
-robustness-runtime Pareto frontier over CRLB-aware GNN and fixed MHT. The
+The MDHT hypothesis is rejected if probabilistic voting does not improve the
+proposal-recall/runtime or downstream association frontier over fixed-bin MDHT.
+The association hypothesis is rejected if adaptive branching does not improve
+the robustness-runtime frontier over CRLB-aware GNN and fixed-depth
+Multi-Hypothesis Tracking. The
 downstream extension is rejected if it reduces tracking cost but worsens beam or
 ADB safety, or if gains disappear under held-out seeds/SNR levels.
 
@@ -154,12 +214,14 @@ Boundary cases include crossing targets, close range/angle separation, long
 missed-detection runs, high clutter, covariance miscalibration, and coordinate
 transform perturbations.
 
-## 12. Implementation order
+## 13. Implementation order
 
 1. Freeze common tracking contracts and scenario/seed splits.
-2. Complete covariance-aware GNN baseline.
-3. Implement fixed-depth MHT using the same likelihood.
-4. Add entropy measurement and adaptive branching.
-5. Validate tracking-only experiments.
-6. Freeze downstream utility interface.
-7. Add downstream-aware merging and perform the final ablation.
+2. Implement standard fixed-bin MDHT and its proposal metrics.
+3. Add normalized covariance-weighted probabilistic voting.
+4. Complete the full-innovation covariance GNN baseline.
+5. Implement fixed-depth Multi-Hypothesis Tracking using the same likelihood.
+6. Add entropy measurement and adaptive branching.
+7. Validate tracking-only experiments.
+8. Freeze the downstream utility interface.
+9. Add downstream-aware merging and perform the final ablation.

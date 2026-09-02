@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 import numpy as np
+from typing import Literal
 
 from iscai_stage3.tracking.cartesian import CartesianDetection, CartesianDetectionFrame
 
@@ -16,7 +17,15 @@ class Tracklet:
     source_detection_keys: tuple[str, ...]
 
 
-def _cost(tracklet: Tracklet, detection: CartesianDetection, timestamp_s: float) -> float:
+AssociationMetric = Literal["euclidean", "mahalanobis"]
+
+
+def _cost(
+    tracklet: Tracklet,
+    detection: CartesianDetection,
+    timestamp_s: float,
+    metric: AssociationMetric,
+) -> float:
     dt = timestamp_s - tracklet.timestamps_s[-1]
     if dt <= 0.0:
         raise ValueError("Tracking frames must have strictly increasing timestamps.")
@@ -29,6 +38,10 @@ def _cost(tracklet: Tracklet, detection: CartesianDetection, timestamp_s: float)
     else:
         predicted = last
     residual = np.asarray(detection.position_H0_m) - predicted
+    if metric == "euclidean":
+        return float(residual @ residual)
+    if metric != "mahalanobis":
+        raise ValueError("Unknown association metric.")
     innovation = np.asarray(tracklet.covariances_H0_m2[-1]) + np.asarray(detection.covariance_H0_m2)
     innovation += np.eye(3) * 1e-9
     return float(residual @ np.linalg.solve(innovation, residual))
@@ -38,6 +51,8 @@ def build_gnn_tracklets(
     frames: tuple[CartesianDetectionFrame, ...],
     *,
     chi_square_gate: float = 11.3448667301,
+    association_metric: AssociationMetric = "mahalanobis",
+    euclidean_gate_m: float = 5.0,
 ) -> tuple[Tracklet, ...]:
     """Deterministic causal global-nearest-neighbour baseline.
 
@@ -47,6 +62,15 @@ def build_gnn_tracklets(
 
     if not math.isfinite(chi_square_gate) or chi_square_gate <= 0.0:
         raise ValueError("chi_square_gate must be finite and positive.")
+    if not math.isfinite(euclidean_gate_m) or euclidean_gate_m <= 0.0:
+        raise ValueError("euclidean_gate_m must be finite and positive.")
+    if association_metric not in ("euclidean", "mahalanobis"):
+        raise ValueError("Unknown association metric.")
+    association_gate = (
+        euclidean_gate_m ** 2
+        if association_metric == "euclidean"
+        else chi_square_gate
+    )
     active: list[Tracklet] = []
     next_id = 0
     previous_timestamp = None
@@ -57,8 +81,8 @@ def build_gnn_tracklets(
         candidates = []
         for track_index, tracklet in enumerate(active):
             for detection_index, detection in enumerate(frame.detections):
-                cost = _cost(tracklet, detection, frame.timestamp_s)
-                if cost <= chi_square_gate:
+                cost = _cost(tracklet, detection, frame.timestamp_s, association_metric)
+                if cost <= association_gate:
                     candidates.append((cost, tracklet.tracklet_id, detection.detection_key, track_index, detection_index))
         used_tracks: set[int] = set()
         used_detections: set[int] = set()

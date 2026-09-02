@@ -93,8 +93,9 @@ redistributing the dataset.
 ## Paper status
 
 `paper/manuscript.tex` is aligned with the implemented Stage 4-7 pipeline. Its
-numerical results are preliminary until the calibration and baseline-separation
-gates in `paper/CLAIM_EVIDENCE.md` pass.
+numerical results are preliminary until the corrected classical baselines and
+their downstream comparisons are regenerated as described in
+`paper/CLAIM_EVIDENCE.md`.
 
 ## License and data
 

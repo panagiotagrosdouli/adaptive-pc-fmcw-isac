@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import numpy as np
 
 from iscai_stage3.tracking.cartesian import CartesianDetectionFrame
 
@@ -29,6 +30,16 @@ class MdhtPeak:
     vx_mps: float
     vy_mps: float
     votes: int
+    supporting_detection_keys: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ProbabilisticMdhtPeak:
+    x0_m: float
+    y0_m: float
+    vx_mps: float
+    vy_mps: float
+    normalized_score: float
     supporting_detection_keys: tuple[str, ...]
 
 
@@ -69,3 +80,53 @@ def fixed_bin_mdht(
         if votes >= config.minimum_votes:
             peaks.append(MdhtPeak(key[0]*config.position_bin_m,key[1]*config.position_bin_m,key[2]*config.velocity_bin_mps,key[3]*config.velocity_bin_mps,votes,tuple(sorted(support))))
     return tuple(sorted(peaks, key=lambda peak: (-peak.votes, peak.x0_m, peak.y0_m, peak.vx_mps, peak.vy_mps)))
+
+
+def probabilistic_mdht(
+    frames: tuple[CartesianDetectionFrame, ...],
+    *,
+    config: MdhtConfig = MdhtConfig(),
+    process_variance_m2: float = 0.25,
+) -> tuple[ProbabilisticMdhtPeak, ...]:
+    """Score fixed-grid MDHT candidates with normalized covariance-aware votes."""
+
+    if not math.isfinite(process_variance_m2) or process_variance_m2 < 0.0:
+        raise ValueError("process_variance_m2 must be finite and non-negative.")
+    candidate_config = MdhtConfig(
+        position_bin_m=config.position_bin_m,
+        velocity_bin_mps=config.velocity_bin_mps,
+        minimum_time_separation_s=config.minimum_time_separation_s,
+        minimum_votes=1,
+    )
+    candidates = fixed_bin_mdht(frames, config=candidate_config)
+    if not candidates:
+        return ()
+    reference_time = frames[0].timestamp_s
+    scores = np.zeros(len(candidates), dtype=float)
+    supports = [set() for _ in candidates]
+    for frame in frames:
+        dt = frame.timestamp_s - reference_time
+        for detection in frame.detections:
+            covariance = np.asarray(detection.covariance_H0_m2, dtype=float)[:2, :2]
+            covariance += np.eye(2) * process_variance_m2
+            inverse = np.linalg.inv(covariance)
+            log_weights = []
+            for candidate in candidates:
+                predicted = np.asarray((candidate.x0_m + candidate.vx_mps * dt, candidate.y0_m + candidate.vy_mps * dt))
+                residual = np.asarray(detection.position_H0_m[:2]) - predicted
+                log_weights.append(-0.5 * float(residual @ inverse @ residual))
+            maximum = max(log_weights)
+            weights = np.exp(np.asarray(log_weights) - maximum)
+            total = float(np.sum(weights))
+            if total <= 0.0 or not math.isfinite(total):
+                raise RuntimeError("Invalid probabilistic MDHT normalization.")
+            weights /= total
+            scores += weights
+            for index, weight in enumerate(weights):
+                if weight >= 1.0 / len(candidates):
+                    supports[index].add(detection.detection_key)
+    peaks = tuple(
+        ProbabilisticMdhtPeak(c.x0_m,c.y0_m,c.vx_mps,c.vy_mps,float(scores[i]),tuple(sorted(supports[i])))
+        for i,c in enumerate(candidates)
+    )
+    return tuple(sorted(peaks,key=lambda p:(-p.normalized_score,p.x0_m,p.y0_m,p.vx_mps,p.vy_mps)))

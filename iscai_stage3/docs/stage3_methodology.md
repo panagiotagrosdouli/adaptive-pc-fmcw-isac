@@ -84,6 +84,12 @@ minimum support count are selected on validation scenarios only.
 MDHT produces anonymous tracklet proposals. It must never receive WOMD IDs,
 object classes, future states, or evaluator truth sidecars.
 
+For each two-dimensional projection, the accumulator uses
+`rho_extent=max(hypot(u,v))`. This intentionally corrects the Part-A notebook's
+span-based rho bound, which can discard votes when a point cloud is translated
+away from the coordinate origin. The regression invariant is one accumulator
+vote per input point for every theta bin.
+
 ## 5. Association model
 
 For predicted track `j` and detection `i`, define innovation and covariance

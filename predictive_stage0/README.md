@@ -1,9 +1,15 @@
 # Stage 0 — Freeze and Provenance
 
-**Canonical implementation:** `stages/00_freeze_and_provenance/`
+**Canonical implementation:** this directory, `predictive_stage0/`.
 
 ## Scope
 Freeze the exact code, dataset identities, split ownership and experiment protocol before paper-scale experiments are interpreted as final evidence.
+
+## Included implementation
+- `scripts/freeze_stage00.py` — provenance freeze and split-overlap gate;
+- `experiment_protocol.template.json` — frozen paper experiment contract;
+- `stage.json` — machine-readable stage definition/status;
+- `tests/test_freeze_stage00.py` — provenance and overlap-contract tests.
 
 ## Inputs
 - repository commit SHA;
@@ -21,4 +27,13 @@ Publication manifests, split-overlap audit and Stage-00 status report under `art
 The stage is `DONE` only when immutable provenance artifacts exist and the scenario-overlap audit passes. Script presence alone is insufficient.
 
 ## Commands
-Use the executable implementation and tests in `stages/00_freeze_and_provenance/`.
+```bash
+python predictive_stage0/scripts/freeze_stage00.py \
+  --train-npz data/processed/womd_official_samples.npz \
+  --official-validation-npz data/processed/womd_v131_official_validation.npz \
+  --output-root artifacts/paper_final
+
+pytest -q predictive_stage0/tests
+```
+
+The older `stages/00_freeze_and_provenance/` path is retained temporarily for compatibility/history while the predictive-stage layout becomes the active repository organization.

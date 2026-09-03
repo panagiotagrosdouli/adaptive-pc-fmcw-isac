@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """Evaluate one learned checkpoint on trajectory, calibration and frozen-link fidelity."""
 from __future__ import annotations
-import argparse,csv,hashlib,importlib.util,json
+import argparse,csv,hashlib,importlib.util,json,sys
 from collections import defaultdict
 from pathlib import Path
 import numpy as np,torch
 HERE=Path(__file__).resolve().parent
 def load_path(path,name):
- s=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(s); assert s.loader; s.loader.exec_module(m); return m
-modelm=load_path(HERE/"model.py","model"); cal=load_path(HERE/"calibration.py","calibration"); lm=load_path(HERE.parent/"02_pc_fmcw_dpsk_link"/"link_model.py","link_model")
+ s=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(s); assert s.loader; sys.modules[s.name]=m; s.loader.exec_module(m); return m
+modelm=load_path(HERE/"model.py","predictive_stage4_model"); cal=load_path(HERE/"calibration.py","predictive_stage4_calibration"); lm=load_path(HERE.parent/"predictive_stage2"/"link_model.py","predictive_stage2_link_model")
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def predict(ckpt,npz,split,batch=1024):
- d=torch.load(ckpt,map_location="cpu",weights_only=False); net=modelm.CommunicationAwareGRU(**d["architecture"]); net.load_state_dict(d["state_dict"]); net.eval(); norm=d["normalization"]
+ d=torch.load(ckpt,map_location="cpu",weights_only=False)
+ if d.get("normalization",{}).get("source_split")!="training": raise RuntimeError("checkpoint normalization must be fitted on training only")
+ if d.get("official_validation_used_for_selection") is not False: raise RuntimeError("checkpoint metadata does not prove held-out-safe selection")
+ if d.get("selection_split")!="development": raise RuntimeError("checkpoint selection_split must be development")
+ net=modelm.CommunicationAwareGRU(**d["architecture"]); net.load_state_dict(d["state_dict"]); net.eval(); norm=d["normalization"]
  with np.load(npz,allow_pickle=False) as z:
   m=np.asarray(z["split"]).astype(str)==split; x=np.concatenate([z["history_xy"][m],z["history_vxy"][m]],axis=-1).astype(np.float32); y=np.asarray(z["future_xy"])[m].astype(np.float32); sid=np.asarray(z["scenario_id"])[m].astype(str); sdc=np.asarray(z["sdc_future_xy"])[m].astype(np.float32) if "sdc_future_xy" in z.files else None; rel=np.asarray(z["future_relative_xy"])[m].astype(np.float32) if "future_relative_xy" in z.files else None
  if not len(y): raise RuntimeError(f"no samples for split {split}")
@@ -31,15 +35,15 @@ def main():
  if a.fit_calibration and a.calibration: p.error("choose fit or apply calibration, not both")
  if a.fit_calibration and a.split!="development": p.error("calibration fitting is development-only")
  if bool(a.link_config)!=bool(a.ber_lut): p.error("--link-config and --ber-lut must be supplied together")
- yh,y,sids,sdc,true_rel,meta=predict(a.checkpoint,a.npz,a.split); residual=yh-y; var=None; link=None
+ yh,y,sids,sdc,true_rel,meta=predict(a.checkpoint,a.npz,a.split); residual=yh-y; var=None; link=None; calibration_sha=None
  if a.link_config:
   if sdc is None or true_rel is None: raise RuntimeError("frozen-link evaluation requires sdc_future_xy and future_relative_xy")
   link=lm.LinkModel.from_dict(json.loads(a.link_config.read_text()),lm.BerLut.from_csv(a.ber_lut))
- if a.fit_calibration: var=cal.fit_isotropic_variance(residual); cal.save_calibration(a.fit_calibration,var,checkpoint_sha256=sha(a.checkpoint),development_dataset_sha256=sha(a.npz))
+ if a.fit_calibration: var=cal.fit_isotropic_variance(residual); cal.save_calibration(a.fit_calibration,var,checkpoint_sha256=sha(a.checkpoint),development_dataset_sha256=sha(a.npz)); calibration_sha=sha(a.fit_calibration)
  if a.calibration:
   c=json.loads(a.calibration.read_text());
   if c.get("official_validation_used_for_fit") is not False or c.get("fit_split")!="development" or c.get("checkpoint_sha256")!=sha(a.checkpoint): raise RuntimeError("invalid calibration provenance")
-  var=np.asarray(c["variance_xy_m2"],float)
+  var=np.asarray(c["variance_xy_m2"],float); calibration_sha=sha(a.calibration)
  acc=defaultdict(list)
  for i,s in enumerate(sids):
   e=np.linalg.norm(residual[i],axis=-1); v={"ade_m":float(e.mean()),"fde_m":float(e[-1])}
@@ -50,11 +54,11 @@ def main():
  for s,items in sorted(acc.items()):
   keys=set().union(*(x.keys() for x in items)); row={"scenario_id":s,"split":a.split,"actor_samples":len(items)}
   for k in keys:
-   vals=[x[k] for x in items if x.get(k) is not None]; row[k]=float(np.mean(vals)) if vals else ""
+   vals=[x[k] for x in items if x.get(k) is not None]; row[k]=float(np.sum(vals)) if k=="snr_joint_in_fov_steps" and vals else (float(np.mean(vals)) if vals else "")
   rows.append(row)
  a.output.parent.mkdir(parents=True,exist_ok=True); fields=sorted(set().union(*(r.keys() for r in rows)))
  with a.output.open("w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
- metric_keys=sorted(set(rows[0])-{"scenario_id","split","actor_samples"}); summary={"schema":"stage04_learned_eval_v2","split":a.split,"scenario_count":len(rows),"sample_count":len(y),"checkpoint_sha256":sha(a.checkpoint),"dataset_sha256":sha(a.npz),"objective":meta["objective"],"seed":meta["seed"],"aggregation_unit":"scenario","link_model_sha256":sha(a.link_config) if link else None,"ber_lut_sha256":sha(a.ber_lut) if link else None}
+ metric_keys=sorted(set(rows[0])-{"scenario_id","split","actor_samples"}); summary={"schema":"stage04_learned_eval_v3","split":a.split,"scenario_count":len(rows),"sample_count":len(y),"checkpoint_sha256":sha(a.checkpoint),"dataset_sha256":sha(a.npz),"objective":meta["objective"],"seed":meta["seed"],"aggregation_unit":"scenario","link_model_sha256":sha(a.link_config) if link else None,"ber_lut_sha256":sha(a.ber_lut) if link else None,"calibration_sha256":calibration_sha}
  for k in metric_keys:
   vals=[r[k] for r in rows if r.get(k)!=""]; summary[k]=float(np.mean(vals)) if vals else None
  a.summary.parent.mkdir(parents=True,exist_ok=True); a.summary.write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n"); print(json.dumps(summary,indent=2)); return 0

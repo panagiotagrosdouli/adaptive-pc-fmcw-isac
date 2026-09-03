@@ -18,7 +18,7 @@ def test_scenario_split_is_deterministic():
 def test_world_to_sdc_anchor_frame():
     pts = np.array([[11.0, 20.0], [10.0, 21.0]], dtype=np.float32)
     origin = np.array([10.0, 20.0], dtype=np.float32)
-    out = m.rotate_to_sdc(pts, origin, 0.0)
+    out = m.rotate(pts, origin, 0.0)
     np.testing.assert_allclose(out, [[1.0, 0.0], [0.0, 1.0]])
 
 

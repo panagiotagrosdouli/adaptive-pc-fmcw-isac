@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "womd-trajectory-beam-adb"
-version = "0.1.0"
-description = "Uncertainty-aware WOMD trajectory prediction for adaptive beam selection and predictive ADB"
+name = "womd-predictive-connectivity"
+version = "0.2.0"
+description = "WOMD trajectory forecasting to predictive PC-FMCW/DPSK vehicular communication scheduling"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7"]
@@ -14,9 +14,20 @@ dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7"]
 learning = ["torch>=2.0"]
 waymo = ["protobuf>=4.21", "tensorflow>=2.12"]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
+paper = []
 
 [tool.pytest.ini_options]
-testpaths = ["iscai_stage0/tests", "iscai_stage1/tests", "iscai_stage1/tests_lidar", "iscai_stage2/tests", "iscai_stage3/tests", "iscai_stage4/tests", "iscai_stage5/tests", "iscai_stage6/tests"]
+testpaths = [
+  "stages/00_freeze_and_provenance/tests",
+  "iscai_stage0/tests",
+  "iscai_stage1/tests",
+  "iscai_stage1/tests_lidar",
+  "iscai_stage2/tests",
+  "iscai_stage3/tests",
+  "iscai_stage4/tests",
+  "iscai_stage5/tests",
+  "iscai_stage6/tests"
+]
 pythonpath = ["iscai_stage0/src", "iscai_stage1/src", "iscai_stage2/src", "iscai_stage3/src", "iscai_stage4/src", "iscai_stage5/src", "iscai_stage6/src", "iscai_stage7/stage7_real/src"]
 addopts = "-ra"
 

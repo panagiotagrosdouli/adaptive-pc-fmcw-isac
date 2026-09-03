@@ -1,0 +1,46 @@
+{
+  "id": "stage00",
+  "name": "Freeze and Provenance",
+  "status": "PARTIAL",
+  "purpose": "Make the experiment definition immutable before final learned evaluation.",
+  "depends_on": [],
+  "inputs": [
+    "repository commit",
+    "official WOMD training-derived NPZ",
+    "separate official WOMD validation NPZ",
+    "Part-A receiver implementation"
+  ],
+  "commands": {
+    "test": "pytest -q stages/00_freeze_and_provenance/tests",
+    "execute": "python stages/00_freeze_and_provenance/scripts/freeze_stage00.py --train-npz data/processed/womd_official_samples.npz --official-validation-npz data/processed/womd_v131_official_validation.npz --output-root artifacts/paper_final"
+  },
+  "outputs": [
+    "artifacts/paper_final/manifests/code_manifest.json",
+    "artifacts/paper_final/manifests/dataset_manifest.json",
+    "artifacts/paper_final/manifests/experiment_protocol.json",
+    "artifacts/paper_final/manifests/stage00_status.json",
+    "artifacts/paper_final/data_audit/split_overlap.json"
+  ],
+  "work_items": [
+    "freeze commit SHA and environment",
+    "record dataset hashes and WOMD release",
+    "freeze deterministic train/development scenario split",
+    "register official validation as untouched held-out",
+    "audit zero scenario overlap across training corpus/development/official-validation",
+    "freeze primary/secondary metrics and confirmatory statistical families"
+  ],
+  "acceptance_criteria": [
+    "all supplied final dataset assets have immutable SHA-256 hashes",
+    "scenario overlap count equals zero",
+    "official validation is present and has not been used for tuning",
+    "protocol records causal history-only predictor inputs",
+    "manifest records exact code commit and frozen protocol"
+  ],
+  "forbidden": [
+    "sample-level random split that leaks scenarios",
+    "hyperparameter tuning on official validation",
+    "future-state predictor inputs",
+    "marking the stage DONE without the separate official validation artifact"
+  ],
+  "notes": "Executable gate now exists. Stage remains PARTIAL until official validation is available and the generated stage00_status.json is DONE."
+}

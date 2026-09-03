@@ -7,6 +7,8 @@ updated from causal position innovation likelihoods only.
 from __future__ import annotations
 import numpy as np
 
+from predictors import Forecast
+
 DT=0.1
 
 
@@ -47,5 +49,4 @@ class IMM:
             mean=np.sum(mu[:,None]*xs[:,:2],axis=0)
             cov=sum(mu[j]*(Ps[j,:2,:2]+np.outer(xs[j,:2]-mean,xs[j,:2]-mean)) for j in range(2))
             means.append(mean); covs.append(cov)
-        # Avoid importing the common Forecast class to keep this module standalone.
-        return type("Forecast",(),{"mean_xy":np.asarray(means),"covariance_xy":np.asarray(covs)})()
+        return Forecast(np.asarray(means),np.asarray(covs))

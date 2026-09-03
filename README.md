@@ -6,9 +6,121 @@ This repository is the research and reproducibility workspace for an end-to-end 
 
 > Can future vehicle motion, predicted causally from observed WOMD history, be converted into useful future PC-FMCW/DPSK link information and used to improve packet scheduling, timely delivered goodput, outage, PDR, latency and fairness?
 
-The project is intentionally **not** a beam-selection/ADB paper anymore. The primary decision variable is now **which connected vehicle / packet is served, when it is served, and with what priority**. Beam-management and ADB code from the earlier research line is preserved only as legacy/reference material and must not be used as the main novelty claim of this paper.
+The active paper is **not** a beam-selection/ADB paper. The main decision variable is which connected vehicle or packet is served, when it is served, and with what priority. Earlier beam-management and ADB code is preserved only as legacy/reference material.
 
----
+## Research pipeline
+
+```text
+Official WOMD motion
+        |
+        v
+Causal history construction
+        |
+        v
+Trajectory prediction
+(classical + learned communication-aware GRU)
+        |
+        v
+Future actor-SDC relative geometry
+(range, bearing, relative motion)
+        |
+        v
+PC-FMCW / DPSK link prediction
+(SNR, BER/PER, goodput, outage, link lifetime)
+        |
+        v
+Queues + deadlines + offered load
+        |
+        v
+Reactive / predictive / oracle scheduling
+        |
+        v
+Packet-level communication outcomes
+(goodput, PDR, outage, deadline misses, latency, fairness)
+        |
+        v
+Scenario-clustered statistics + paper artifacts
+```
+
+Only observed history is available to deployable predictors. Ground-truth future states are used only as supervised targets, held-out evaluation truth, and for the explicitly labelled information-oracle baseline.
+
+## Repository structure
+
+The top level is organized to make the paper workflow visible immediately, following a staged research layout while keeping one canonical implementation per scientific component.
+
+| Directory | Purpose |
+| --- | --- |
+| `predictive_data_prep/` | Entry point for dataset manifests, split ownership, data-preparation and corpus-audit workflow. |
+| `predictive_stage0/` | Freeze code, datasets, experiment protocol, hashes and zero-overlap provenance. |
+| `predictive_stage1/` | WOMD causal data construction, true-SDC future geometry and canonical mobility corpus audits. |
+| `predictive_stage2/` | Part-A-derived DPSK BER calibration, frozen link configuration and geometry-dependent PC-FMCW/DPSK link model. |
+| `predictive_stage3/` | Classical trajectory predictors and non-learned scheduling baselines. |
+| `predictive_stage4/` | Communication-aware GRU objectives, lambda selection, five-seed training, calibration and learned evaluation. |
+| `predictive_stage5/` | Untouched official-WOMD predictor and link-fidelity evaluation. |
+| `predictive_stage6/` | Packet traffic, queues, deadlines, reactive/predictive schedulers and controlled operating-regime sweeps. |
+| `predictive_stage7/` | Scenario-clustered statistics, ADE-vs-link-vs-scheduler joins, figures and tables. |
+| `predictive_stage8/` | Final manuscript, supplement, runtime evidence and one-command reproduction bundle. |
+| `stages/` | Canonical active implementations and machine-readable `stage.json` contracts for Stages 00-08. |
+| `part_a_reference/` | Frozen reference material from the PC-FMCW/DPSK Part-A implementation used only for continuity and calibration provenance. |
+| `artifacts/` | Publication artifact workspace; final evidence belongs under `artifacts/paper_final/`. |
+| `audits/` | Human- and machine-readable audit entry point. |
+| `manifests/` | Provenance and experiment-manifest entry point. |
+| `iscai_stage0/`-`iscai_stage7/` | Historical beam/ADB research code retained as legacy/reference material; not the active paper workflow. |
+
+The `predictive_stage*` directories are navigation entry points. Scientific code remains canonical inside `stages/` so that the repository does not silently maintain two implementations of the same method.
+
+## Stage overview
+
+### Stage 0 — Freeze and provenance
+
+Stage 0 freezes the exact code revision, dataset identities, split protocol, experiment configuration and overlap audits before final evidence is generated. A stage is not complete because a script exists; the required manifests must be produced by a real run and pass their acceptance checks.
+
+### Stage 1 — WOMD mobility corpus
+
+Stage 1 constructs the causal trajectory corpus from WOMD. The canonical geometry distinguishes actor future position in the SDC-at-anchor coordinate frame from communication-relative future geometry. For communication evaluation,
+
+```text
+future_relative_xy(t) = actor_future_xy(t) - true_sdc_future_xy(t)
+```
+
+in the common anchor orientation. The SDC itself is not a communication target. Train/development ownership is scenario-level, while official WOMD validation remains an untouched held-out split.
+
+### Stage 2 — PC-FMCW / DPSK link model
+
+Stage 2 freezes the Part-A receiver-derived DPSK BER mapping and the paper's explicit geometry-to-link extension. WOMD supplies real motion; SNR, BER/PER, goodput, outage and link lifetime are model-based communication quantities unless separately supported by physical measurements.
+
+### Stage 3 — Classical baselines
+
+Stage 3 provides causal kinematic predictors and non-learned scheduler baselines. Predictor evaluation uses the same true-SDC relative geometry as the learned pipeline. The information oracle is an information-access upper-reference baseline, not a proof of globally optimal scheduling.
+
+### Stage 4 — Communication-aware GRU
+
+Stage 4 uses one shared architecture for four objectives:
+
+```text
+GRU-Traj : L_traj
+GRU-Link : L_traj + lambda_link * L_link
+GRU-Out  : L_traj + lambda_out * L_outage
+GRU-Full : L_traj + lambda_link * L_link + lambda_out * L_outage
+```
+
+The final archive requires five paired seeds per objective, exactly 20 accepted checkpoints, training-only normalization, development-only hyperparameter selection and development-fitted uncertainty calibration. Official validation cannot be used for selection.
+
+### Stage 5 — Official predictor evaluation
+
+Stage 5 evaluates frozen predictors on untouched official WOMD validation. Required scenario-level outputs include ADE/FDE, range and bearing errors, SNR and goodput fidelity, outage metrics, usable-link-lifetime error, and NLL plus 50/90/95% coverage where the selected uncertainty method supports them.
+
+### Stage 6 — Packet scheduling
+
+Stage 6 evaluates reactive, proportional-fair, classical predictive, learned predictive, link-lifetime/predictive-utility and information-oracle schedulers under identical traffic and link realizations. Main controlled sweeps cover prediction horizon, connected-vehicle count, offered load and scenario type.
+
+### Stage 7 — Statistics and figures
+
+Stage 7 treats scenario as the experimental unit. Final analyses use paired per-scenario comparisons, 10k scenario-cluster bootstrap confidence intervals, paired Wilcoxon tests, t-test sensitivity analyses where appropriate, effect sizes, win fractions and Holm multiplicity correction. It also joins trajectory error, link-state fidelity and realized scheduler performance.
+
+### Stage 8 — Final paper
+
+Stage 8 freezes final claims, manuscript source, supplement, vector figures, LaTeX tables, runtime evidence and the reproduction bundle. Positive and negative operating regimes must both remain visible in the final paper.
 
 ## Scientific thesis
 
@@ -16,196 +128,49 @@ The paper tests whether geometric trajectory accuracy is sufficient for communic
 
 > The value of motion prediction for vehicular optical scheduling is determined not only by ADE/FDE, but by how well predicted motion preserves communication-relevant quantities such as future SNR, BER/PER, goodput, outage and usable-link lifetime, and by the operating regime in which the scheduler acts.
 
-The desired scientific result is **not** “prediction always wins”. Positive and negative operating regimes are both valid evidence. A publishable outcome may show that a communication-aware predictor improves link-state fidelity while scheduler-level gains depend on prediction horizon, number of connected vehicles, offered load, deadline pressure and scenario type.
-
----
-
-## End-to-end causal pipeline
-
-```text
-Official WOMD motion
-    |
-    v
-History-only trajectory predictor
-    |
-    v
-Future relative geometry
-(range, bearing, relative motion)
-    |
-    v
-PC-FMCW / DPSK link model
-    |
-    v
-Future SNR / BER / PER / goodput / outage
-    |
-    v
-Predicted usable-link lifetime
-    |
-    +-------------------------+
-    |                         |
-    v                         v
-Queues + deadlines       Communication-aware loss
-    |                         |
-    v                         |
-Predictive scheduler <--------+
-    |
-    v
-Ground-truth future link realization
-    |
-    v
-Packet-level outcomes
-Goodput / PDR / outage / deadline misses / P95 latency / Jain fairness
-```
-
-Only observed history is available to deployable predictors. Ground-truth future is used only for supervised targets, final evaluation and the information-oracle baseline.
-
----
+The desired scientific result is not “prediction always wins”. A valid result may show that communication-aware prediction improves link-state fidelity while network-level benefit depends on prediction horizon, user count, offered load, deadline pressure and scenario geometry.
 
 ## Research questions
 
-**RQ1 — When does prediction help scheduling?**  Compare predictive schedulers against current-state/reactive scheduling across controlled operating regimes.
+**RQ1 — When does prediction help scheduling?** Compare predictive schedulers against current-state/reactive scheduling across controlled operating regimes.
 
-**RQ2 — Is the lowest-ADE/FDE predictor also the best communication predictor?**  Join geometric metrics with SNR/goodput/outage/link-lifetime fidelity and realized scheduler outcomes.
+**RQ2 — Is the lowest-ADE/FDE predictor also the best communication predictor?** Join geometric metrics with SNR/goodput/outage/link-lifetime fidelity and realized scheduler outcomes.
 
-**RQ3 — Can communication-aware training improve downstream scheduling?**  Compare four learned objectives under the same architecture and training protocol.
+**RQ3 — Can communication-aware training improve downstream scheduling?** Compare the four learned objectives under the same architecture and training protocol.
 
-**RQ4 — Optional extension: does predictive RL add value beyond a strong heuristic scheduler?**  RL is explicitly secondary and must not delay the core paper.
-
----
+**RQ4 — Optional extension: does predictive RL add value beyond a strong heuristic scheduler?** RL is secondary and must not delay the core paper.
 
 ## Data protocol and scientific boundaries
 
-The core mobility source is official Waymo Open Motion Dataset data. The paper protocol separates:
+The core mobility source is official Waymo Open Motion Dataset data. The paper protocol separates training, development, untouched official WOMD validation, and optional hidden-test evaluation. The repository must preserve scenario-level zero overlap between training, development and official validation.
 
-- **training**: deterministic scenario-level subset of official WOMD training data used for gradient updates;
-- **development**: disjoint deterministic scenario-level subset of official WOMD training data used for early stopping, lambda selection, model selection and uncertainty calibration;
-- **paper held-out**: untouched **official WOMD validation** used only after the protocol is frozen;
-- **official hidden test**: optional leaderboard/challenge evaluation only.
-
-The repository must maintain a zero-overlap scenario audit between train, development and official validation.
-
-Important scientific wording: WOMD provides real vehicle motion. PC-FMCW/DPSK communication quantities in this repository are physics/model based unless explicitly backed by external physical measurements. Do not describe them as real PC-FMCW communication measurements.
-
----
-
-## Canonical stage organization
-
-The paper workflow is organized in `stages/`. Each stage is a research gate with its own scope, inputs, outputs, execution plan and acceptance criteria. Scientific implementation remains reusable rather than duplicated across stage folders.
-
-| Stage | Folder | Purpose | Gate |
-|---|---|---|---|
-| 00 | `stages/00_freeze_and_provenance/` | Freeze code, datasets, split protocol, experiment contract | immutable manifests + zero overlap |
-| 01 | `stages/01_womd_data_pipeline/` | Build/audit official training and validation mobility corpora | true-SDC, valid states, deterministic samples |
-| 02 | `stages/02_pc_fmcw_dpsk_link/` | Freeze Part-A receiver-derived BER mapping and geometry-dependent link model | canonical LUT + config/hash |
-| 03 | `stages/03_classical_baselines/` | Evaluate kinematic/classical predictors and non-learned schedulers | reproducible baseline tables |
-| 04 | `stages/04_communication_aware_gru/` | Lambda sweep + four GRU objectives × five seeds | 20 verified checkpoints |
-| 05 | `stages/05_official_predictor_evaluation/` | Untouched official-validation predictor/link evaluation | scenario-level held-out metrics |
-| 06 | `stages/06_packet_scheduling/` | Reactive, classical predictive, learned and oracle packet scheduling | paired scheduler matrix + sweeps |
-| 07 | `stages/07_statistics_and_figures/` | Scenario-clustered inference, joined ADE-vs-goodput analysis, figures/tables | CIs + multiplicity-controlled statistics |
-| 08 | `stages/08_final_paper/` | Final claims, manuscript, supplement and reproduction bundle | submission gate |
-
-Legacy `iscai_stage0`–`iscai_stage7` directories remain available for historical code and prior beam/ADB experiments. New paper work must follow the `stages/` plan above.
-
----
+WOMD provides real vehicle motion. PC-FMCW/DPSK communication quantities in this repository are physics/model based unless explicitly backed by external physical measurements. They must not be described as real WOMD communication measurements.
 
 ## Learned experiment matrix
 
-The canonical learned architecture is evaluated with exactly four objectives under the same train/development protocol:
+Paper-scale learned evidence requires five paired seeds for each of the four objectives. A checkpoint is reusable only when dataset hashes, normalization, architecture, objective, selected lambdas, seed metadata and code revision match the frozen protocol.
 
-```text
-GRU-Traj  : L_traj
-GRU-Link  : L_traj + lambda_link * L_link
-GRU-Out   : L_traj + lambda_out  * L_outage
-GRU-Full  : L_traj + lambda_link * L_link + lambda_out * L_outage
-```
-
-Paper-scale evidence requires **5 paired seeds per objective**. Checkpoints are reusable only when their dataset hashes, normalization, architecture, selected lambdas and seed metadata match the frozen protocol exactly.
-
-Every final checkpoint archive must record at least:
-
-- dataset and split manifest hashes;
-- seed;
-- model architecture/configuration;
-- normalization statistics;
-- objective and lambda values;
-- best epoch / stopping criterion;
-- training/development metrics;
-- code commit SHA.
-
----
+Every final checkpoint archive must record dataset/split hashes, seed, architecture, normalization, objective and lambda values, best epoch/stopping criterion, training/development metrics and code commit SHA.
 
 ## Predictor evaluation
 
-Final official-validation evaluation must be scenario level and include both geometry and communication fidelity.
-
-**Trajectory:** ADE, FDE.
-
-**Geometry/link:** range MAE, bearing MAE, SNR error, predicted-goodput error, outage classification metrics, usable-link-lifetime error.
-
-**Probabilistic/calibration:** NLL plus nominal-vs-empirical coverage (at minimum 50%, 90%, 95%) where the selected uncertainty method supports them.
-
-A key artifact is the joined table:
+Final official-validation evaluation is scenario-level and combines trajectory accuracy, communication-link fidelity and uncertainty calibration. A central analysis artifact is the joined relationship
 
 ```text
 ADE/FDE
-  <-> link-state fidelity
+  <-> future link-state fidelity
   <-> realized scheduler goodput / PDR / deadlines / latency
 ```
 
-This enables the central test of whether predictor ranking changes when the downstream communication objective is considered.
-
----
+which tests whether predictor ranking changes when the downstream communication objective is considered.
 
 ## Scheduling evaluation
 
-The final scheduler matrix should include, where implemented and scientifically compatible:
+The main scheduler family includes Random/Round Robin, Reactive Greedy, proportional-fair/current-state scheduling, classical predictive schedulers using CV/Kalman/IMM forecasts, the four learned GRU variants, predictive-utility/link-lifetime scheduling, and the information oracle where scientifically compatible.
 
-- Random / Round Robin;
-- Reactive Greedy;
-- proportional-fair or equivalent current-state baseline;
-- classical predictive scheduling using CV/Kalman/IMM forecasts;
-- GRU-Traj predictive scheduling;
-- GRU-Link predictive scheduling;
-- GRU-Out predictive scheduling;
-- GRU-Full predictive scheduling;
-- link-lifetime / predictive-utility heuristic;
-- **information oracle** under the same heuristic family.
+The main controlled grid is prediction horizon `0.3 / 0.5 / 1.0 / 2.0 s`, connected vehicles `3 / 5 / 10`, offered load `0.35 / 0.55 / 0.75 / 0.90`, plus motion/FoV-edge/density scenario slices. Primary network KPIs are timely delivered goodput, PDR, outage, deadline misses, latency including P95, and Jain fairness.
 
-The oracle is an **information oracle**, not a proof of global optimality.
-
-Main controlled sweeps:
-
-- prediction horizon: `0.3 / 0.5 / 1.0 / 2.0 s`;
-- connected vehicles: `3 / 5 / 10`;
-- offered load: `0.35 / 0.55 / 0.75 / 0.90`;
-- scenario slices: straight, approaching/receding, lane-change/merge, turn/intersection, FoV-edge and dense multi-user scenes.
-
-Primary network KPIs: timely delivered goodput, PDR, outage, deadline misses, latency (including P95) and Jain fairness.
-
----
-
-## Statistics policy
-
-The final paper must not treat individual trajectory samples as independent evidence when scenarios are the experimental unit.
-
-Required analysis:
-
-- paired per-scenario comparisons;
-- scenario-cluster bootstrap confidence intervals (10k resamples for final artifacts);
-- paired Wilcoxon tests;
-- paired t-test as sensitivity analysis where appropriate;
-- effect sizes and win fractions;
-- predeclared confirmatory families;
-- Holm multiplicity correction;
-- raw and adjusted p-values exported together.
-
-The manuscript must remain consistent with both positive and negative results.
-
----
-
-## Required publication artifacts
-
-Final publication readiness requires all of the following:
+## Publication artifacts
 
 ```text
 artifacts/paper_final/
@@ -213,7 +178,7 @@ artifacts/paper_final/
 ├── data_audit/         split overlap and integrity reports
 ├── ber/                final Part-A receiver-derived BER LUT
 ├── lambda_sweep/       raw sweep + frozen selection record
-├── checkpoints/        4 objectives x 5 seeds
+├── checkpoints/        four objectives x five seeds
 ├── predictor_eval/     official-validation scenario metrics
 ├── scheduler_eval/     raw per-scenario x seed x policy results
 ├── statistics/         bootstrap, tests, effects, Holm outputs
@@ -224,73 +189,23 @@ artifacts/paper_final/
 └── reproduction/       immutable reproduction manifest/bundle
 ```
 
-Large WOMD files and model checkpoints do not need to be committed to Git. Their manifests and hashes do.
+Large WOMD files and model checkpoints do not need to be committed to Git; their manifests and hashes do.
 
----
+## Reproducibility philosophy
 
-## Submission gate
-
-The paper is **not submission-ready** until all core items below are complete:
-
-- [ ] final dataset manifests are frozen;
-- [ ] train/dev/official-validation scenario overlap is exactly zero;
-- [ ] canonical Part-A BER LUT and physical-layer config are hashed;
-- [ ] lambda selection is completed without official-validation access;
-- [ ] four learned objectives × five seeds are archived;
-- [ ] untouched official-WOMD validation evaluation is complete;
-- [ ] learned predictor uncertainty/NLL evaluation is complete;
-- [ ] main scheduler matrix is complete;
-- [ ] horizon / N / load / scenario-slice sweeps are complete;
-- [ ] joined ADE/link-fidelity/realized-goodput analysis is complete;
-- [ ] scenario-cluster bootstrap CIs are complete;
-- [ ] Holm-adjusted confirmatory statistics are complete;
-- [ ] final figures/tables are generated only from frozen final artifacts;
-- [ ] claims are aligned with the evidence, including negative operating regimes;
-- [ ] clean one-command reproduction path is documented;
-- [ ] final manuscript and supplement compile successfully.
-
-RL is optional and is explicitly outside this core submission gate.
-
----
-
-## Current evidence status
-
-The repository contains substantial historical implementation and preliminary evidence, but those results must not be confused with the final held-out paper evidence. In particular, the existing top-level README previously described the earlier uncertainty-aware trajectory-to-beam/ADB research direction; that is now treated as legacy context rather than the active paper scope.
-
-Current learned results should be labeled **internal-development / preliminary** unless they were produced under the final frozen official-validation protocol.
-
----
-
-## Reproducibility principles
-
-1. Never use future states as predictor inputs.
-2. Split by scenario, never by trajectory row when leakage is possible.
-3. Never tune lambdas, thresholds or hyperparameters on official validation.
-4. Freeze normalization from training data only.
-5. Use the same architecture/schedule when comparing learned objectives.
-6. Archive raw scenario-level results before aggregation.
-7. Keep real mobility and simulated/model-based communication claims clearly separated.
-8. Preserve failed/negative regimes; do not cherry-pick only improvements.
-9. Generate manuscript numbers from frozen artifacts rather than manually typing them.
-10. Record commit SHA, config hashes and dataset hashes for every final experiment.
-
----
+The repository uses a staged freeze-and-audit workflow. Future states are never predictor inputs; splits are scenario-level; official validation is never used for model selection; normalization is fitted on training only; learned objective comparisons share architecture and schedule; raw scenario-level outputs are archived before aggregation; real mobility and model-based communication claims remain separate; negative regimes are retained; final manuscript numbers must be generated from frozen artifacts; and every final experiment records code/config/data provenance.
 
 ## Quick start
 
-For legacy code/tests, follow the existing package requirements. For the new paper workflow, begin with Stage 00 and do not advance past a gate until its acceptance criteria are met.
-
 ```bash
-# inspect the research plan
+# inspect the active paper workflow
 find stages -maxdepth 2 -type f | sort
 
 # run repository tests appropriate to the checked-out environment
 pytest -q
 ```
 
-Dataset-dependent stages require locally licensed WOMD data. The repository must not redistribute Waymo raw data.
-
----
+Dataset-dependent stages require locally licensed WOMD data. The repository does not redistribute Waymo raw data.
 
 ## Paper title candidates
 
@@ -302,15 +217,13 @@ Technical alternative:
 
 **Communication-Aware Trajectory Prediction and Predictive Link Scheduling for PC-FMCW Vehicular ISAC**
 
----
-
 ## Status vocabulary
 
 Use only these labels in stage reports:
 
-- `DONE` — code, execution, artifacts and acceptance criteria all complete;
-- `PARTIAL` — implementation exists but required final evidence is incomplete;
+- `DONE` — implementation, execution, artifacts and acceptance criteria are complete;
+- `PARTIAL` — implementation/evidence exists but required final evidence is incomplete;
 - `BLOCKED` — a required external dependency or dataset is unavailable;
-- `NOT_STARTED` — no final implementation/evidence yet.
+- `NOT_STARTED` — final implementation/evidence has not begun.
 
-A script existing in the repository does **not** make a stage DONE. Final status requires real execution on the specified data and successful acceptance-gate checks.
+A script existing in the repository does not make a stage `DONE`. Final status requires real execution on the specified data and successful acceptance-gate checks.

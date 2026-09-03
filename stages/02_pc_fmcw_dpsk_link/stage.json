@@ -1,0 +1,25 @@
+{
+  "id": "stage02",
+  "name": "PC-FMCW/DPSK Physical and Link Layer",
+  "status": "PARTIAL",
+  "purpose": "Freeze the Part-A-derived communication mapping used to convert future WOMD geometry into communication state.",
+  "depends_on": ["stage00", "stage01"],
+  "inputs": ["Part-A DPSK receiver implementation", "frozen link geometry/config", "WOMD relative geometry"],
+  "outputs": ["artifacts/paper_final/ber/dbpsk_ber_lut.csv", "artifacts/paper_final/ber/dbpsk_ber_lut_manifest.json", "artifacts/paper_final/manifests/link_model_config.json", "artifacts/paper_final/link_sensitivity/"],
+  "work_items": [
+    "regenerate canonical receiver-derived BER-vs-SNR LUT",
+    "hash LUT and physical-layer configuration",
+    "map range/bearing/pointing/FoV/atmospheric terms to link state",
+    "derive SNR, BER, PER, delivered goodput, outage and usable-link lifetime",
+    "document packet length/rate/outage thresholds",
+    "run physical/link sensitivity checks"
+  ],
+  "acceptance_criteria": [
+    "canonical BER LUT is reproducible for frozen seed/config",
+    "all scheduler experiments reference the same LUT hash",
+    "link outputs remain finite and within physical/domain bounds",
+    "outage and usable-link definitions are explicit and frozen",
+    "paper wording separates real WOMD motion from model-based communication"
+  ],
+  "forbidden": ["introducing an unrelated second physical-layer model", "calling simulated optical channel outputs measured WOMD data", "changing link thresholds after official held-out evaluation"]
+}

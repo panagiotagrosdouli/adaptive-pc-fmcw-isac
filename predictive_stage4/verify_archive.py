@@ -19,6 +19,7 @@ def main():
  if len(found)!=20: errors.append(f"expected exactly 20 objective/seed checkpoints, got {len(found)}")
  if len(dataset_hashes)!=1: errors.append(f"dataset hashes differ: {sorted(map(str,dataset_hashes))}")
  if len(architectures)!=1: errors.append("architectures differ across objective ablations")
- report={"schema":"stage04_checkpoint_archive_v1","passed":not errors,"expected_objectives":list(OBJECTIVES),"expected_seeds":seeds,"checkpoint_count":len(found),"dataset_sha256":next(iter(dataset_hashes)) if len(dataset_hashes)==1 else None,"files":found,"errors":errors}
+ files=[{"objective":o,"seed":s,"file":found[(o,s)]} for o,s in sorted(found,key=lambda x:(str(x[0]),str(x[1])))]
+ report={"schema":"stage04_checkpoint_archive_v1","passed":not errors,"expected_objectives":list(OBJECTIVES),"expected_seeds":seeds,"checkpoint_count":len(found),"dataset_sha256":next(iter(dataset_hashes)) if len(dataset_hashes)==1 else None,"files":files,"errors":errors}
  a.output.parent.mkdir(parents=True,exist_ok=True); a.output.write_text(json.dumps(report,indent=2,sort_keys=True)+"\n"); print(json.dumps(report,indent=2,sort_keys=True)); return 0 if report["passed"] else 2
 if __name__=="__main__": raise SystemExit(main())

@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+import sys
 
 import numpy as np
 
@@ -7,6 +8,7 @@ P = Path(__file__).with_name("link_model.py")
 spec = importlib.util.spec_from_file_location("link_model", P)
 m = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
+sys.modules[spec.name] = m
 spec.loader.exec_module(m)
 
 

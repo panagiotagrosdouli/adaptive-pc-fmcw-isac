@@ -1,0 +1,44 @@
+{
+  "paper_scope": "trajectory-predictive PC-FMCW/DPSK vehicular communication scheduling",
+  "mobility_evidence": "real WOMD trajectories",
+  "communication_evidence": "physics/model-based PC-FMCW/DPSK simulation",
+  "history_steps": 11,
+  "future_steps": 80,
+  "sampling_hz": 10,
+  "internal_split": {
+    "source": "official WOMD training only",
+    "method": "deterministic scenario-level split",
+    "training_fraction": 0.9,
+    "development_fraction": 0.1
+  },
+  "paper_heldout": {
+    "source": "official WOMD validation",
+    "tuning_allowed": false,
+    "model_selection_allowed": false
+  },
+  "learned_objectives": ["trajectory", "trajectory_link", "trajectory_outage", "full"],
+  "paired_seeds": [20260827, 20260828, 20260829, 20260830, 20260831],
+  "primary_predictor_metrics": ["ADE", "FDE"],
+  "link_fidelity_metrics": ["range_MAE", "bearing_MAE", "SNR_MAE", "goodput_MAE", "outage_F1", "outage_AUROC", "link_lifetime_MAE"],
+  "probabilistic_metrics": ["NLL", "coverage_50", "coverage_90", "coverage_95"],
+  "network_metrics": ["timely_goodput", "PDR", "outage", "deadline_miss_rate", "P95_latency", "Jain_fairness"],
+  "scheduler_baselines": ["Reactive", "PF", "CV", "IMM", "GRU-Traj", "GRU-Link", "GRU-Out", "GRU-Full", "Link-Lifetime", "Information-Oracle"],
+  "horizons_s": [0.3, 0.5, 1.0, 2.0],
+  "vehicle_counts": [3, 5, 10],
+  "offered_loads": [0.35, 0.55, 0.75, 0.9],
+  "scenario_slices": ["straight", "approaching", "receding", "lane_change_merge", "turn", "FoV_edge", "dense"],
+  "inference": {
+    "unit": "scenario",
+    "paired": true,
+    "cluster_bootstrap_repetitions": 10000,
+    "confirmatory_test": "paired Wilcoxon",
+    "sensitivity_test": "paired t-test",
+    "multiplicity": "Holm"
+  },
+  "causality_rules": [
+    "predictor inputs contain observed history only",
+    "future ground truth is never exposed to deployable predictors",
+    "future ground truth is allowed only for supervision, scoring and the information oracle"
+  ],
+  "claim_rule": "Report positive and negative operating regimes; do not claim prediction universally improves communication."
+}

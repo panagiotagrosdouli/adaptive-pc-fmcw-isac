@@ -2,9 +2,11 @@ PYTHON ?= python
 PYTEST ?= pytest
 TRAIN_NPZ ?= data/processed/womd_official_samples.npz
 OFFICIAL_VALIDATION_NPZ ?= data/processed/womd_v131_official_validation.npz
+WOMD_TRAIN_TFRECORDS ?= data/raw/womd/training
+WOMD_VALIDATION_TFRECORDS ?= data/raw/womd/validation
 ARTIFACT_ROOT ?= artifacts/paper_final
 
-.PHONY: test stage00 stage00-test stage01 stage01-test
+.PHONY: test stage00 stage00-test stage01 stage01-test stage01-export-train stage01-export-validation
 
 test:
 	$(PYTEST) -q
@@ -19,7 +21,18 @@ stage00:
 		--output-root $(ARTIFACT_ROOT)
 
 stage01-test:
-	$(PYTEST) -q stages/01_womd_data_pipeline/test_audit_corpus.py
+	$(PYTEST) -q stages/01_womd_data_pipeline/test_audit_corpus.py stages/01_womd_data_pipeline/test_export_contract.py
+
+stage01-export-train:
+	$(PYTHON) stages/01_womd_data_pipeline/export_womd_tfrecord.py \
+		--input $(WOMD_TRAIN_TFRECORDS) --output $(TRAIN_NPZ) \
+		--report $(ARTIFACT_ROOT)/data_audit/training_export.json
+
+stage01-export-validation:
+	$(PYTHON) stages/01_womd_data_pipeline/export_womd_tfrecord.py \
+		--input $(WOMD_VALIDATION_TFRECORDS) --output $(OFFICIAL_VALIDATION_NPZ) \
+		--fixed-split official_validation \
+		--report $(ARTIFACT_ROOT)/data_audit/official_validation_export.json
 
 stage01:
 	$(PYTHON) stages/01_womd_data_pipeline/audit_corpus.py $(TRAIN_NPZ) \

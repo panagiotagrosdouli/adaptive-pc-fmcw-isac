@@ -1,0 +1,27 @@
+{
+  "id": "stage01",
+  "name": "Official WOMD Data Pipeline",
+  "status": "PARTIAL",
+  "purpose": "Create auditable real-WOMD mobility corpora for training/development and untouched official-validation evaluation.",
+  "depends_on": ["stage00"],
+  "inputs": ["official WOMD training TFRecords", "official WOMD validation TFRecords"],
+  "outputs": ["data/processed/womd_official_samples.npz", "data/processed/womd_v131_official_validation.npz", "artifacts/paper_final/data_audit/training_audit.json", "artifacts/paper_final/data_audit/official_validation_audit.json"],
+  "work_items": [
+    "use true sdc_track_index and validity masks",
+    "retain vehicle communication candidates using frozen eligibility rules",
+    "export 1 s history / 8 s future windows at WOMD cadence",
+    "preserve scenario IDs for clustered inference",
+    "compute train/dev/held-out counts and integrity checks",
+    "verify no NaN/Inf in retained tensors",
+    "record coordinate transform and true-SDC geometry policy"
+  ],
+  "acceptance_criteria": [
+    "official training corpus passes integrity audit",
+    "official validation corpus exists separately from training NPZ",
+    "all retained samples have valid required history/future states",
+    "scenario IDs are preserved and unique split ownership is auditable",
+    "no NaN or Inf in final arrays",
+    "official validation label is fixed_split=official_validation"
+  ],
+  "forbidden": ["calling internal development official validation", "mixing official-validation samples into training", "dropping scenario identity before evaluation"]
+}

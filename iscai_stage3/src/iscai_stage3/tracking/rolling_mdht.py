@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import math
 import numpy as np
 
-from iscai_stage3.tracking.projection_fusion import MdhtSegment
+from iscai_stage3.tracking.projection_fusion import MdhtSegment, build_segment
 
 
 @dataclass(frozen=True)
@@ -42,6 +42,23 @@ def suppress_duplicate_segments(segments: tuple[MdhtSegment, ...], threshold: fl
     return tuple(sorted(kept, key=lambda s: (s.window_start, s.frame_indices, sorted(s.support_ids))))
 
 
+def merge_duplicate_segments(segments, detections, threshold):
+    """Part-A support-union merge followed by a fresh segment fit."""
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("Jaccard threshold must lie in [0,1].")
+    used = set(); merged = []
+    for index, segment in enumerate(segments):
+        if index in used:
+            continue
+        group = [segment]; used.add(index)
+        for other_index in range(index+1,len(segments)):
+            if other_index not in used and support_jaccard(segment,segments[other_index]) > threshold:
+                group.append(segments[other_index]); used.add(other_index)
+        support = frozenset().union(*(item.support_ids for item in group))
+        merged.append(build_segment(detections,support,segment.window_start,segment.window_end))
+    return tuple(merged)
+
+
 def track_points_by_frame(track: StitchedTrack) -> dict[int, np.ndarray]:
     grouped = {}
     for segment in track.segments:
@@ -73,7 +90,17 @@ def stitching_cost(track: StitchedTrack, segment: MdhtSegment, config: Stitching
 def stitch_segments(segments: tuple[MdhtSegment, ...], config: StitchingConfig = StitchingConfig()) -> tuple[StitchedTrack, ...]:
     tracks: list[StitchedTrack] = []
     next_id = 1
-    for segment in sorted(segments, key=lambda s: (s.window_start, s.frame_indices, sorted(s.support_ids))):
+    # Preserve the Part-A chronological/spatial ordering, with support IDs only
+    # as a final deterministic tie-break.
+    ordered = sorted(
+        segments,
+        key=lambda s: (
+            s.window_start,
+            float(np.mean([position[0] for position in s.positions_H0_m])),
+            sorted(s.support_ids),
+        ),
+    )
+    for segment in ordered:
         feasible = []
         for index, track in enumerate(tracks):
             accepted, cost = stitching_cost(track, segment, config)

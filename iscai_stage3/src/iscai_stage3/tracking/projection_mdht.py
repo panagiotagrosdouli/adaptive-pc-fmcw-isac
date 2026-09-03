@@ -18,6 +18,7 @@ class ProjectionHoughConfig:
     max_peaks: int = 18
     nms_radius_bins: int = 4
     support_epsilon: float = 1.6
+    rho_bound_mode: str = "origin_norm"
 
     def __post_init__(self) -> None:
         values = (self.theta_min_deg, self.theta_max_deg, self.rho_bin_width,
@@ -33,6 +34,8 @@ class ProjectionHoughConfig:
             raise ValueError("Peak threshold fraction must lie in [0,1].")
         if self.max_peaks < 1 or self.nms_radius_bins < 0:
             raise ValueError("Invalid peak-count or NMS configuration.")
+        if self.rho_bound_mode not in ("origin_norm", "legacy_span"):
+            raise ValueError("rho_bound_mode must be origin_norm or legacy_span.")
 
 
 @dataclass(frozen=True)
@@ -63,7 +66,11 @@ def compute_projection_accumulator(points_uv: np.ndarray, config: ProjectionHoug
     # whenever the cloud is translated away from the coordinate origin.
     # Cauchy-Schwarz gives |u cos(theta)+v sin(theta)| <= hypot(u,v), so this
     # bound conserves every point's vote for every theta.
-    rho_extent = float(np.max(np.hypot(points[:, 0], points[:, 1])))
+    if config.rho_bound_mode == "legacy_span":
+        spans = np.ptp(points, axis=0)
+        rho_extent = float(np.hypot(spans[0], spans[1]))
+    else:
+        rho_extent = float(np.max(np.hypot(points[:, 0], points[:, 1])))
     rho_min = -rho_extent - 2.0 * config.rho_bin_width
     rho_max = rho_extent + 2.0 * config.rho_bin_width
     rho_grid = np.arange(rho_min, rho_max + config.rho_bin_width, config.rho_bin_width)

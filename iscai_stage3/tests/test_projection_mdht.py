@@ -29,5 +29,9 @@ class TestProjectionMdht(unittest.TestCase):
         with self.assertRaises(ValueError):
             compute_projection_accumulator(np.array([[0.0,np.nan]]),self.config)
 
+    def test_legacy_mode_is_explicit(self):
+        legacy=ProjectionHoughConfig(rho_bound_mode="legacy_span")
+        self.assertEqual(legacy.rho_bound_mode,"legacy_span")
+
 
 if __name__ == "__main__": unittest.main()

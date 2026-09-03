@@ -1,0 +1,23 @@
+{
+  "schema": "predictive_connectivity_link_model_v1",
+  "scientific_boundary": "Model-based communication extension driven by real WOMD geometry; not measured WOMD communication data and not claimed as a Part-A reported link budget.",
+  "part_a_fixed": {
+    "carrier_frequency_hz": 193400000000000.0,
+    "chirp_bandwidth_hz": 10000000000.0,
+    "chirp_duration_s": 0.00001,
+    "data_rate_bps": 1000000000.0,
+    "modulation": "DBPSK",
+    "receiver": "per-symbol FFT carrier extraction, parabolic peak refinement, carrier-phase-step compensation, differential decision"
+  },
+  "paper_extension_assumptions": {
+    "packet_bits": 12000,
+    "reference_range_m": 20.0,
+    "reference_snr_db": 20.0,
+    "range_power_exponent": 2.0,
+    "atmospheric_loss_db_per_km": 0.5,
+    "pointing_sigma_deg": 4.0,
+    "fov_half_angle_deg": 12.0,
+    "outage_per_threshold": 0.1
+  },
+  "freeze_rule": "These extension assumptions must be sensitivity-tested and frozen before official held-out scheduler evaluation."
+}

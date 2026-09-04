@@ -19,7 +19,7 @@ jobs:
           cache: pip
       - name: Install test dependencies
         run: python -m pip install -e ".[dev,learning]"
-      - name: Run predictive Stage 0-5 tests
+      - name: Run predictive Stage 0-6 tests
         run: |
           pytest -q \
             predictive_stage0/tests \
@@ -32,4 +32,5 @@ jobs:
             predictive_stage3/test_schedulers.py \
             predictive_stage4/test_calibration.py \
             predictive_stage4/test_evidence_gate.py \
-            stages/05_official_predictor_evaluation
+            stages/05_official_predictor_evaluation \
+            stages/06_packet_scheduling

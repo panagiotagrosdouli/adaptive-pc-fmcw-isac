@@ -13,7 +13,7 @@
     "reflection_phase_deg": 90.0
   },
   "derived": {
-    "one_way_radial_speed_mps_from_5100hz_at_77ghz": 19.8589755345,
+    "one_way_radial_speed_mps_from_5100hz_at_77ghz": 19.8563835818,
     "comment": "monostatic radar Doppler would be approximately twice the one-way communication Doppler for the same radial speed"
   }
 }

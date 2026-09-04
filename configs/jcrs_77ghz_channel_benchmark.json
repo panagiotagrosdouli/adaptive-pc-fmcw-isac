@@ -1,0 +1,19 @@
+{
+  "benchmark_name": "Lubke_77GHz_JCRS_channel_example",
+  "source": "M. Lubke et al., Evaluating RF Hardware Characteristics for Automotive JCRS Systems Based on PMCW-CDMA at 77 GHz, IEEE Access, DOI 10.1109/ACCESS.2023.3259725",
+  "waveform_note": "source waveform is PMCW-CDMA, not PC-FMCW; channel values are used only as a 77-GHz vehicular cross-check",
+  "communication_los": {
+    "distance_m": 20.28,
+    "delay_ns": 67.6,
+    "path_attenuation_db_without_antenna_gains": 96.31,
+    "doppler_hz": 5100.0
+  },
+  "radar_reflection": {
+    "vehicle_rcs_dbsm": 15.0,
+    "reflection_phase_deg": 90.0
+  },
+  "derived": {
+    "one_way_radial_speed_mps_from_5100hz_at_77ghz": 19.8589755345,
+    "comment": "monostatic radar Doppler would be approximately twice the one-way communication Doppler for the same radial speed"
+  }
+}

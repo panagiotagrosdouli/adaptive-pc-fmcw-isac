@@ -1,7 +1,7 @@
 {
   "id": "stage06",
   "name": "Packet Scheduling and Operating-Region Evaluation",
-  "status": "NOT_STARTED",
+  "status": "PARTIAL",
   "purpose": "Measure the realized packet-level value of trajectory prediction under identical traffic and link conditions.",
   "depends_on": ["stage05"],
   "inputs": ["official-validation predictor outputs", "frozen link model", "frozen traffic/queue/deadline config"],

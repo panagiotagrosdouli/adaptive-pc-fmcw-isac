@@ -6,7 +6,7 @@ WOMD_TRAIN_TFRECORDS ?= data/raw/womd/training
 WOMD_VALIDATION_TFRECORDS ?= data/raw/womd/validation
 ARTIFACT_ROOT ?= artifacts/paper_final
 
-.PHONY: test stage00 stage00-test stage01 stage01-test stage01-export-train stage01-export-validation stage05-test stage06-test
+.PHONY: test stage00 stage00-test stage01 stage01-test stage01-export-train stage01-export-validation stage05-test stage06-test stage07-test
 
 test:
 	$(PYTEST) -q
@@ -49,3 +49,6 @@ stage05-test:
 
 stage06-test:
 	$(PYTEST) -q stages/06_packet_scheduling
+
+stage07-test:
+	$(PYTEST) -q stages/07_statistics_and_figures

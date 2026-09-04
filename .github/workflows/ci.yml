@@ -15,3 +15,5 @@ jobs:
           cache: pip
       - run: python -m pip install -e .[dev]
       - run: pytest -q
+      - name: Stage 7 validation smoke test
+        run: python scripts/run_stage7_validation.py --sensing-trials 1 --high-mobility-trials 1 --comm-bits 2000 --output /tmp/stage7-smoke.json

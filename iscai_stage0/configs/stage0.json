@@ -1,9 +1,0 @@
-{
-  "dataset_root": null,
-  "dataset_root_env": "WOMD_ROOT",
-  "dataset_release": "WOMD/WOMD-LiDAR v1.3.0",
-  "part_a_role": "not_applicable_to_primary_methodology",
-  "reports_dir": "reports/stage0",
-  "max_tree_depth": 3,
-  "sample_files_per_group": 8
-}

@@ -1,0 +1,17 @@
+{
+  "seed": 20260905,
+  "trials": 5000,
+  "snr_db": [-5, 0, 5, 10, 15, 20, 25],
+  "velocity_mps": [0, 15, 30, 45, 60],
+  "interference_db": [-100, -10, -5, 0],
+  "cfo_hz": [0, 100, 500, 1000],
+  "phase_noise_std_rad": [0.0, 0.02, 0.05, 0.1],
+  "state_uncertainty_scale": [0.0, 0.5, 1.0, 2.0],
+  "qos": {
+    "ber_max": 0.001,
+    "min_effective_rate_mbps": 1.0,
+    "range_rmse_max_m": 0.5,
+    "velocity_rmse_max_mps": 0.5,
+    "joint_success_probability": 0.95
+  }
+}

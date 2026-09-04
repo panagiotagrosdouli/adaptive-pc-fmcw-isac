@@ -1,0 +1,7 @@
+{
+  "waveform": {"bandwidth_hz": 200000000.0, "chirp_duration_s": 0.00004, "sample_rate_hz": 10000000.0, "n_chirps": 64},
+  "carrier_hz": 77000000000.0,
+  "qos": {"ber_max": 0.001, "rate_min_bps": 100000.0, "range_rmse_max_m": 1.0, "velocity_rmse_max_mps": 1.0, "reliability": 0.95},
+  "sweeps": {"snr_db": [-10, 0, 10, 20, 30], "velocity_mps": [0, 10, 30, 50], "cfo_hz": [0, 100, 500], "phase_noise_std_rad": [0.0, 0.001, 0.01], "inr_db": [null, -10, 0, 10]},
+  "seeds": [0,1,2,3,4,5,6,7,8,9]
+}

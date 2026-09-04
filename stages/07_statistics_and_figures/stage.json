@@ -1,7 +1,7 @@
 {
   "id": "stage07",
   "name": "Statistics, Joined Analysis and Publication Figures",
-  "status": "NOT_STARTED",
+  "status": "PARTIAL",
   "purpose": "Convert raw scenario-level predictor and scheduler outputs into defensible statistical evidence and publication-ready figures/tables.",
   "depends_on": ["stage05", "stage06"],
   "inputs": ["predictor scenario metrics", "scheduler raw scenario results", "frozen confirmatory-family definitions"],

@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - research/predictive-stage-code-layout
+      - research/stage05-official-predictor-evaluation
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -17,16 +19,17 @@ jobs:
           cache: pip
       - name: Install test dependencies
         run: python -m pip install -e ".[dev,learning]"
-      - name: Run predictive Stage 0-4 tests
+      - name: Run predictive Stage 0-5 tests
         run: |
           pytest -q \
-            predictive_stage0/tests \
-            predictive_stage1/test_audit_corpus.py \
-            predictive_stage1/test_export_contract.py \
-            predictive_stage2/test_link_model.py \
-            predictive_stage2/test_part_a_receiver.py \
-            predictive_stage3/test_predictors.py \
-            predictive_stage3/test_evaluate_predictors.py \
-            predictive_stage3/test_schedulers.py \
-            predictive_stage4/test_calibration.py \
-            predictive_stage4/test_evidence_gate.py
+            stages/00_freeze_and_provenance/tests \
+            stages/01_womd_data_pipeline/test_audit_corpus.py \
+            stages/01_womd_data_pipeline/test_export_contract.py \
+            stages/02_pc_fmcw_dpsk_link/test_link_model.py \
+            stages/02_pc_fmcw_dpsk_link/test_part_a_receiver.py \
+            stages/03_classical_baselines/test_predictors.py \
+            stages/03_classical_baselines/test_evaluate_predictors.py \
+            stages/03_classical_baselines/test_schedulers.py \
+            stages/04_communication_aware_gru/test_calibration.py \
+            stages/04_communication_aware_gru/test_evidence_gate.py \
+            stages/05_official_predictor_evaluation

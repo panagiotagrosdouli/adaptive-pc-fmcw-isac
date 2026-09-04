@@ -6,7 +6,7 @@ WOMD_TRAIN_TFRECORDS ?= data/raw/womd/training
 WOMD_VALIDATION_TFRECORDS ?= data/raw/womd/validation
 ARTIFACT_ROOT ?= artifacts/paper_final
 
-.PHONY: test stage00 stage00-test stage01 stage01-test stage01-export-train stage01-export-validation
+.PHONY: test stage00 stage00-test stage01 stage01-test stage01-export-train stage01-export-validation stage05-test
 
 test:
 	$(PYTEST) -q
@@ -43,3 +43,6 @@ stage01:
 	$(PYTHON) stages/01_womd_data_pipeline/audit_split_ownership.py \
 		$(TRAIN_NPZ) $(OFFICIAL_VALIDATION_NPZ) \
 		--output $(ARTIFACT_ROOT)/data_audit/stage01_split_ownership.json
+
+stage05-test:
+	$(PYTEST) -q stages/05_official_predictor_evaluation

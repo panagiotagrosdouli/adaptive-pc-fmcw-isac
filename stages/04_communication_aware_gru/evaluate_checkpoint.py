@@ -19,13 +19,23 @@ def predict(ckpt,npz,split,batch=1024):
  with torch.no_grad():
   for i in range(0,len(x),batch): out.append(net(torch.from_numpy(x[i:i+batch])).numpy())
  return np.concatenate(out),y,sid,sdc,rel,d
+def binary_auroc(labels,scores):
+ labels=np.asarray(labels,bool); scores=np.asarray(scores,float); pos=int(labels.sum()); neg=int((~labels).sum())
+ if not pos or not neg: return None
+ order=np.argsort(scores,kind="stable"); ranks=np.empty(len(scores),float); i=0
+ while i<len(order):
+  j=i+1
+  while j<len(order) and scores[order[j]]==scores[order[i]]: j+=1
+  ranks[order[i:j]]=(i+j+1)/2.; i=j
+ return float((ranks[labels].sum()-pos*(pos+1)/2)/(pos*neg))
 def link_metrics(model,pred_rel,true_rel,dt=.1):
  def rb(x): return np.linalg.norm(x,axis=-1),np.arctan2(x[:,1],x[:,0])
  rp,bp=rb(pred_rel); rt,bt=rb(true_rel); ps=[model.evaluate(range_m=max(float(r),1e-3),pointing_error_rad=float(abs(b))) for r,b in zip(rp,bp)]; ts=[model.evaluate(range_m=max(float(r),1e-3),pointing_error_rad=float(abs(b))) for r,b in zip(rt,bt)]
- sp=np.array([x.snr_db for x in ps]); st=np.array([x.snr_db for x in ts]); gp=np.array([x.goodput_bps for x in ps]); gt=np.array([x.goodput_bps for x in ts]); op=np.array([x.outage for x in ps]); ot=np.array([x.outage for x in ts]); joint=np.isfinite(sp)&np.isfinite(st)
+ sp=np.array([x.snr_db for x in ps]); st=np.array([x.snr_db for x in ts]); gp=np.array([x.goodput_bps for x in ps]); gt=np.array([x.goodput_bps for x in ts]); op=np.array([x.outage for x in ps]); ot=np.array([x.outage for x in ts]); outage_score=np.array([x.per for x in ps]); joint=np.isfinite(sp)&np.isfinite(st)
  life=lambda o: float((np.flatnonzero(o)[0] if np.any(o) else len(o))*dt); tp=np.sum(op&ot); fp=np.sum(op&~ot); fn=np.sum(~op&ot); den=2*tp+fp+fn
  ang=np.abs(np.arctan2(np.sin(bp-bt),np.cos(bp-bt)))
- return {"range_mae_m":float(np.mean(abs(rp-rt))),"bearing_mae_rad":float(np.mean(ang)),"snr_mae_db":float(np.mean(abs(sp[joint]-st[joint]))) if joint.any() else None,"snr_joint_in_fov_steps":int(joint.sum()),"goodput_mae_bps":float(np.mean(abs(gp-gt))),"outage_f1":float(2*tp/den) if den else 1.,"link_lifetime_abs_error_s":abs(life(op)-life(ot))}
+ auc=binary_auroc(ot,outage_score)
+ return {"range_mae_m":float(np.mean(abs(rp-rt))),"bearing_mae_rad":float(np.mean(ang)),"snr_mae_db":float(np.mean(abs(sp[joint]-st[joint]))) if joint.any() else None,"snr_joint_in_fov_steps":int(joint.sum()),"goodput_mae_bps":float(np.mean(abs(gp-gt))),"outage_f1":float(2*tp/den) if den else 1.,"outage_auroc":auc,"outage_auroc_support":int(len(ot)) if auc is not None else 0,"link_lifetime_abs_error_s":abs(life(op)-life(ot))}
 def main():
  p=argparse.ArgumentParser(); p.add_argument("npz",type=Path); p.add_argument("checkpoint",type=Path); p.add_argument("--split",choices=["development","official_validation"],required=True); p.add_argument("--output",type=Path,required=True); p.add_argument("--summary",type=Path,required=True); p.add_argument("--fit-calibration",type=Path); p.add_argument("--calibration",type=Path); p.add_argument("--link-config",type=Path); p.add_argument("--ber-lut",type=Path); a=p.parse_args()
  if a.fit_calibration and a.calibration: p.error("choose fit or apply calibration, not both")
@@ -48,13 +58,13 @@ def main():
   acc[s].append(v)
  rows=[]
  for s,items in sorted(acc.items()):
-  keys=set().union(*(x.keys() for x in items)); row={"scenario_id":s,"split":a.split,"actor_samples":len(items)}
+  keys=set().union(*(x.keys() for x in items)); row={"scenario_id":s,"predictor":meta["objective"],"objective":meta["objective"],"seed":meta["seed"],"split":a.split,"actor_samples":len(items)}
   for k in keys:
    vals=[x[k] for x in items if x.get(k) is not None]; row[k]=float(np.mean(vals)) if vals else ""
   rows.append(row)
  a.output.parent.mkdir(parents=True,exist_ok=True); fields=sorted(set().union(*(r.keys() for r in rows)))
  with a.output.open("w",newline="") as f: w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
- metric_keys=sorted(set(rows[0])-{"scenario_id","split","actor_samples"}); summary={"schema":"stage04_learned_eval_v2","split":a.split,"scenario_count":len(rows),"sample_count":len(y),"checkpoint_sha256":sha(a.checkpoint),"dataset_sha256":sha(a.npz),"objective":meta["objective"],"seed":meta["seed"],"aggregation_unit":"scenario","link_model_sha256":sha(a.link_config) if link else None,"ber_lut_sha256":sha(a.ber_lut) if link else None}
+ metric_keys=sorted(set(rows[0])-{"scenario_id","predictor","objective","seed","split","actor_samples"}); summary={"schema":"stage04_learned_eval_v3","split":a.split,"scenario_count":len(rows),"sample_count":len(y),"checkpoint_sha256":sha(a.checkpoint),"dataset_sha256":sha(a.npz),"objective":meta["objective"],"seed":meta["seed"],"aggregation_unit":"scenario","link_model_sha256":sha(a.link_config) if link else None,"ber_lut_sha256":sha(a.ber_lut) if link else None}
  for k in metric_keys:
   vals=[r[k] for r in rows if r.get(k)!=""]; summary[k]=float(np.mean(vals)) if vals else None
  a.summary.parent.mkdir(parents=True,exist_ok=True); a.summary.write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n"); print(json.dumps(summary,indent=2)); return 0

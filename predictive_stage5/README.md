@@ -45,3 +45,29 @@ This stage tests the paper's central intermediate hypothesis: the predictor with
 
 ## Commands
 Official-validation build/evaluation commands and acceptance checks belong in `stages/05_official_predictor_evaluation/`. Generated official-validation data remain local and are not committed to the repository.
+
+Run the implementation tests with:
+
+```bash
+make stage05-test
+```
+
+After producing per-scenario CSV files with the frozen Stage-03 and Stage-04
+evaluators, run the final acceptance gate and aggregation:
+
+```bash
+python stages/05_official_predictor_evaluation/aggregate_official_evaluation.py \
+  artifacts/paper_final/predictor_eval/raw/*.csv \
+  --output-dir artifacts/paper_final/predictor_eval \
+  --manifest artifacts/paper_final/manifests/stage05.json \
+  --official-dataset data/processed/womd_v131_official_validation.npz \
+  --checkpoint-archive-manifest artifacts/paper_final/manifests/learned_archive.json \
+  --calibration-manifest artifacts/paper_final/manifests/calibration.json \
+  --link-config stages/02_pc_fmcw_dpsk_link/link_model_config.json \
+  --ber-lut artifacts/paper_final/ber/receiver_ber_lut.csv
+```
+
+The command fails closed on split leakage, duplicate scenario/model/seed rows,
+an incomplete four-objective by five-seed archive, invalid calibration provenance,
+or undefined metrics without support counts. `--allow-incomplete-archive` exists
+only for development and unit testing and must never be used for paper evidence.

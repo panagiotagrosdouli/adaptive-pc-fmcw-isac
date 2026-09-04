@@ -3,6 +3,7 @@
 A reproducible, dataset-free research framework for **high-mobility vehicular phase-coded FMCW integrated sensing and communication (PC-FMCW ISAC)**.
 
 The project studies a question that appears before higher-layer scheduling, planning or beam control:
+![Uploading image.png…]()
 
 > **Which PC-FMCW PHY configuration is physically feasible, and which feasible configuration should be selected when communication reliability and radar sensing quality must be maintained simultaneously under mobility and imperfect PHY knowledge?**
 

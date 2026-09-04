@@ -1,0 +1,20 @@
+{
+  "profile_name": "TI_77GHz_high_mobility_capability_reference",
+  "profile_kind": "composite_capability_reference_not_single_measured_configuration",
+  "carrier_hz": 77000000000.0,
+  "bandwidth_hz": 1000000000.0,
+  "chirp_duration_s": 0.0000200,
+  "chirp_repetition_s": 0.0000200,
+  "sample_rate_hz": 37500000.0,
+  "samples_per_chirp": 750,
+  "n_chirps": 128,
+  "tx_power_dbm": 13.5,
+  "rx_noise_figure_db": 12.0,
+  "phase_noise_dbc_per_hz_at_1mhz": -96.0,
+  "provenance": {
+    "one_ghz_in_20us_design_reference": "TI AWR1243 front-end white paper discusses ~1 GHz sweep in ~20 us / ~50 MHz/us for high unambiguous velocity",
+    "adc_and_rf_capability": "TI AWR2944: 76-81 GHz, over 4 GHz continuous bandwidth, 37.5 MSPS max ADC, 13.5 dBm TX, ~12 dB NF, phase noise around -96 dBc/Hz at 1 MHz in 76-77 GHz",
+    "n_chirps": "design choice for this simulation, not a claimed TI preset"
+  },
+  "expected_use": "high-mobility sensitivity and profile-selection experiments; not a claim that this exact composite setup is a commercial preset"
+}

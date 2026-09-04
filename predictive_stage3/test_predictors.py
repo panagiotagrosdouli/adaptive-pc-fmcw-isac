@@ -11,7 +11,7 @@ def history(v=2.0):
 def test_last_position_shape():
     f=LastPosition().predict(history(), 20)
     assert f.mean_xy.shape == (20,2)
-    np.testing.assert_allclose(f.mean_xy, history()[-1])
+    np.testing.assert_allclose(f.mean_xy, np.repeat(history()[-1][None], 20, axis=0))
 
 
 def test_cv_exact_on_linear_motion():

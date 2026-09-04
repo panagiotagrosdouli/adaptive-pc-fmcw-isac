@@ -1,9 +1,10 @@
 import importlib.util
+import sys
 from pathlib import Path
 import numpy as np
 HERE=Path(__file__).resolve().parent
 def load(name):
- s=importlib.util.spec_from_file_location(name,HERE/f"{name}.py"); m=importlib.util.module_from_spec(s); assert s.loader; s.loader.exec_module(m); return m
+ s=importlib.util.spec_from_file_location(name,HERE/f"{name}.py"); m=importlib.util.module_from_spec(s); assert s.loader; sys.modules[name]=m; s.loader.exec_module(m); return m
 data=load("data")
 def test_normalization_uses_training_only(tmp_path):
  p=tmp_path/"d.npz"; h=np.zeros((2,11,2),np.float32); v=np.zeros_like(h); h[1]=100; v[1]=100

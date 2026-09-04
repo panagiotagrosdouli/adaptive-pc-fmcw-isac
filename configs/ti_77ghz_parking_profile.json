@@ -1,0 +1,45 @@
+{
+  "profile_name": "TI_77GHz_USRR_like_literature_grounded",
+  "profile_kind": "composite_literature_grounded_not_measured_in_this_repo",
+  "carrier_hz": 77000000000.0,
+  "bandwidth_hz": 858000000.0,
+  "chirp_duration_s": 0.0000256,
+  "chirp_repetition_s": 0.0001158,
+  "sample_rate_hz": 10000000.0,
+  "samples_per_chirp": 256,
+  "n_chirps": 64,
+  "frame_duration_s": 0.05,
+  "tx_power_dbm": 12.0,
+  "rx_noise_figure_db": 14.0,
+  "phase_noise_dbc_per_hz_at_1mhz": -95.0,
+  "communication": {
+    "phase_code_chips_per_chirp": [16, 32, 64],
+    "modulation": "DBPSK_after_chirp_dechirp",
+    "note": "chip count is a design sweep, not a claimed TI modem parameter"
+  },
+  "validation_sweeps": {
+    "range_m": [2.0, 5.0, 10.0, 15.0, 20.0],
+    "radial_velocity_mps": [-6.0, -3.0, 0.0, 3.0, 6.0],
+    "if_snr_db": [-10.0, -5.0, 0.0, 5.0, 10.0, 15.0, 20.0],
+    "residual_frequency_error_hz": [0.0, 100.0, 500.0, 1000.0],
+    "interference_to_noise_db": [null, -10.0, 0.0, 10.0]
+  },
+  "sources": [
+    {
+      "name": "Texas Instruments Automated Parking System Reference Design Using 77-GHz mmWave Sensor, TIDUEO9",
+      "used_for": ["ADC sample rate", "858 MHz valid sweep bandwidth", "40 MHz/us nominal slope entry", "25.6 us chirp time", "115.8 us chirp repetition", "256 samples/chirp", "64 chirps/frame", "50 ms frame duration"]
+    },
+    {
+      "name": "Texas Instruments AWR1642 76-81 GHz automotive FMCW radar sensor",
+      "used_for": ["76-81 GHz hardware band", "12 dBm TX power", "14 dB RX noise figure at 76-77 GHz", "-95 dBc/Hz phase noise at 1 MHz at 76-77 GHz"]
+    },
+    {
+      "name": "Kumbul et al., Experimental Investigation of Phase Coded FMCW for Sensing and Communications, EuCAP 2021",
+      "used_for": ["PC-FMCW joint sensing/communication architecture and experimental precedent"]
+    },
+    {
+      "name": "Kumbul et al., Automotive Radar Interference Mitigation using Phase-Coded FMCW Waveform, IEEE JC&S 2024",
+      "used_for": ["PC-FMCW mutual-interference motivation and automotive-radar context"]
+    }
+  ]
+}

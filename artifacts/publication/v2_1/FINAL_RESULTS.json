@@ -1,0 +1,32 @@
+{
+  "protocol_id": "pcfmcw_isac_paper_v2_1",
+  "evidence_class": "FROZEN_PUBLICATION_V2_1_SIMULATION_CANDIDATE_NOT_HARDWARE_MEASUREMENT",
+  "workflow_run_id": 33967030983,
+  "head_sha": "1b2100c11b6d4a7b6213777fd2da85e22601154b",
+  "n_records": 72000,
+  "n_states_per_policy": 12000,
+  "aggregate": {
+    "B0_FIXED": {"selection_rate": 0.9235833333333333, "abstention_rate": 0.07641666666666669, "joint_qos_probability_unconditional": 0.5904166666666667, "joint_qos_probability_conditional_on_selection": 0.6392673463863575, "mean_normalized_resource_cost_when_selected": 2.3200000000000003},
+    "B1_COMM_ONLY": {"selection_rate": 0.7531666666666667, "abstention_rate": 0.24683333333333335, "joint_qos_probability_unconditional": 0.5259166666666667, "joint_qos_probability_conditional_on_selection": 0.6982739544146935, "mean_normalized_resource_cost_when_selected": 1.3244684437656482},
+    "B2_SENSING_ONLY": {"selection_rate": 0.32258333333333333, "abstention_rate": 0.6774166666666667, "joint_qos_probability_unconditional": 0.16175, "joint_qos_probability_conditional_on_selection": 0.5014208214931543, "mean_normalized_resource_cost_when_selected": 1.056552338083196},
+    "B3_DETERMINISTIC_JOINT": {"selection_rate": 0.19066666666666668, "abstention_rate": 0.8093333333333333, "joint_qos_probability_unconditional": 0.16175, "joint_qos_probability_conditional_on_selection": 0.8483391608391608, "mean_normalized_resource_cost_when_selected": 1.190562247257562},
+    "B4_ROBUST_JOINT": {"selection_rate": 0.12233333333333334, "abstention_rate": 0.8776666666666667, "joint_qos_probability_unconditional": 0.12233333333333334, "joint_qos_probability_conditional_on_selection": 1.0, "mean_normalized_resource_cost_when_selected": 1.207940929869789},
+    "ORACLE": {"selection_rate": 0.6666666666666666, "abstention_rate": 0.33333333333333337, "joint_qos_probability_unconditional": 0.6666666666666666, "joint_qos_probability_conditional_on_selection": 1.0, "mean_normalized_resource_cost_when_selected": 1.2870387865211002}
+  },
+  "reliability_bounds": {
+    "B0_FIXED": {"unconditional_successes": 7085, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.5830131682815675, "conditional_successes": 7085, "conditional_trials": 11083, "conditional_wilson_lower_95": 0.6317312367557972},
+    "B1_COMM_ONLY": {"unconditional_successes": 6311, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.5184140644854207, "conditional_successes": 6311, "conditional_trials": 9038, "conditional_wilson_lower_95": 0.690273941268861},
+    "B2_SENSING_ONLY": {"unconditional_successes": 1941, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.15629735586727259, "conditional_successes": 1941, "conditional_trials": 3871, "conditional_wilson_lower_95": 0.4882058929146192},
+    "B3_DETERMINISTIC_JOINT": {"unconditional_successes": 1941, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.15629735586727259, "conditional_successes": 1941, "conditional_trials": 2288, "conditional_wilson_lower_95": 0.8355936845501951},
+    "B4_ROBUST_JOINT": {"unconditional_successes": 1468, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.11749818265402694, "conditional_successes": 1468, "conditional_trials": 1468, "conditional_wilson_lower_95": 0.998160377197096},
+    "ORACLE": {"unconditional_successes": 8000, "unconditional_trials": 12000, "unconditional_wilson_lower_95": 0.6595514732424368, "conditional_successes": 8000, "conditional_trials": 8000, "conditional_wilson_lower_95": 0.9996619214040297}
+  },
+  "paired_B4_minus_B3_joint_qos": {"mean_paired_difference": -0.03941666666666667, "ci_low": -0.042916666666666665, "ci_high": -0.036, "confidence": 0.95, "n_pairs": 12000, "bootstrap_resamples": 10000},
+  "paired_B4_minus_B0_joint_qos": {"mean_paired_difference": -0.46808333333333335, "ci_low": -0.47700208333333327, "ci_high": -0.45916666666666667, "confidence": 0.95, "n_pairs": 12000, "bootstrap_resamples": 10000},
+  "pareto_B4": [{"chips_per_chirp": 16, "repetition_factor": 1, "tx_power_fraction": 0.251188643150958, "profile_adc_samples_per_frame": 96000, "joint_qos_probability": 1.0, "mean_normalized_resource_cost": 0.9410460059728434, "n": 828}],
+  "sanity_gate": {"b1_b3_are_distinguishable": true, "b4_superiority_over_b3_supported": false, "oracle_not_below_best_deployable": true, "paper_ready_structural_gate": true},
+  "artifact_digests": {
+    "main_final_artifact_sha256": "31daf1b571c84e4c38380cc8e7d03715eb06d03d7d9ff3e151c49184b5ebdd79",
+    "e9_e11_artifact_sha256": "1aeabd05526bfda796cdebb0df45214c2a7c0f665044faa01dfbd7d8244bb722"
+  }
+}

@@ -1,0 +1,46 @@
+\begin{table*}[t]
+\centering
+\caption{Supplemental uncertainty sweep: B3 versus B4. Values are selection rate / conditional joint-QoS probability.}
+\begin{tabular}{c|cc|cc}
+\hline
+Uncertainty scale & B3 selection & B3 conditional QoS & B4 selection & B4 conditional QoS\\
+\hline
+0.0 & 16.67\% & 100.00\% & 16.67\% & 100.00\%\\
+0.5 & 16.67\% & 100.00\% & 16.17\% & 100.00\%\\
+1.0 & 18.50\% & 87.39\% & 12.50\% & 100.00\%\\
+1.5 & 19.75\% & 74.68\% & 11.17\% & 100.00\%\\
+2.0 & 20.33\% & 68.03\% & 9.75\% & 100.00\%\\
+3.0 & 22.83\% & 62.04\% & 5.92\% & 98.59\%\\
+\hline
+\end{tabular}
+\end{table*}
+
+\begin{table}[t]
+\centering
+\caption{Supplemental ablation study.}
+\begin{tabular}{lcc}
+\hline
+Variant & Selection & Conditional joint QoS\\
+\hline
+FULL B4 & 12.50\% & 100.00\%\\
+No physics gate & 31.67\% & 0.00\%\\
+No state uncertainty & 20.00\% & 80.83\%\\
+No joint constraint & 67.25\% & 85.50\%\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Decision-time scaling of the unoptimized Python B4 implementation.}
+\begin{tabular}{rcc}
+\hline
+Robust draws & B3 median [ms] & B4 median [ms]\\
+\hline
+64 & 0.436 & 30.712\\
+128 & 0.435 & 61.026\\
+256 & 0.437 & 121.359\\
+512 & 0.436 & 240.442\\
+\hline
+\end{tabular}
+\end{table}

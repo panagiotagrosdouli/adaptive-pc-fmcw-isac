@@ -1,0 +1,19 @@
+{
+  "evidence_class": "SUPPLEMENTAL_PUBLICATION_V2_1_SIMULATION_NOT_HARDWARE_MEASUREMENT",
+  "workflow_run_id": 33975266575,
+  "source_commit": "ef0e135b88c7c9647d72195f80884e380bc33cf6",
+  "artifacts": {
+    "uncertainty": {"id": 9972489261, "sha256": "e0fab87d8a76158acb61bd40ef06dcfd619fa688e3d221c04eb0d49239ab5840"},
+    "ablations": {"id": 9972427567, "sha256": "a7f09fe3a5d26d80f079fde1d2e2ee45426c33b4691d7bf830b96719b1a5f33b"},
+    "runtime": {"id": 9972331998, "sha256": "07a2ec087c75c88c9858469a6bc1692a780a3da54170a916f8bf63e677bcff5c"},
+    "mismatch": {"id": 9972295945, "sha256": "65dc9b349b10eec6379a0397116d62af66564285454f5a9c2cea671e2d4e5bf1"},
+    "stress": {"id": 9972280724, "sha256": "b1cfe6385e70002b9c8be8eb8716a4a95ecc789b1f7f6ccd1d603a86f7380e23"},
+    "pareto": {"id": 9972243996, "sha256": "272d1796c0570fcb4743a72ca05d89197e3bfc7a83556ee70ce2887fc2dbdb7b"},
+    "physics": {"id": 9972201800, "sha256": "5704aa0313eea77e2b4203929c13104e2fdd6723efe9de1acc75676420d44db4"}
+  },
+  "notes": [
+    "Frozen publication-v2.1 primary benchmark is unchanged.",
+    "Supplemental publication files are deterministic post-processing of successful GitHub Actions artifacts.",
+    "No thresholds, policy logic, or simulations were tuned after observing these results."
+  ]
+}

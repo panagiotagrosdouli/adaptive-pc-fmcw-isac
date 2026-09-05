@@ -1,0 +1,37 @@
+{
+  "protocol_id": "pcfmcw_isac_paper_v2_1",
+  "evidence_class": "FROZEN_PUBLICATION_V2_1_E9_E11_SIMULATION_NOT_HARDWARE_MEASUREMENT",
+  "workflow_run_id": 33967030983,
+  "head_sha": "1b2100c11b6d4a7b6213777fd2da85e22601154b",
+  "e9": {
+    "cfo_vs_inr": {
+      "cells": 15,
+      "cells_flagged_meeting_declared_target_by_frozen_raw_mean_flag": 0,
+      "note": "Frozen E9 flag is based on raw empirical mean, not a Wilson lower confidence bound. Use as operating-region characterization, not a confidence-qualified reliability guarantee."
+    },
+    "ebn0_vs_velocity": {
+      "cells": 42,
+      "cells_flagged_meeting_declared_target_by_frozen_raw_mean_flag": 2,
+      "flagged_cells": [
+        {"ebn0_db": 12, "radial_velocity_mps": 0, "joint_qos_probability": 1.0, "selection_rate": 1.0},
+        {"ebn0_db": 16, "radial_velocity_mps": 0, "joint_qos_probability": 1.0, "selection_rate": 1.0}
+      ],
+      "note": "Frozen E9 flag is based on raw empirical mean, not a Wilson lower confidence bound."
+    },
+    "if_snr_vs_range": {
+      "cells": 42,
+      "cells_flagged_meeting_declared_target_by_frozen_raw_mean_flag": 24,
+      "summary": "All six tested ranges (5,10,20,30,40,50 m) are flagged at IF SNR 5,10,15,20 dB; no tested range is flagged at -10,-5,0 dB.",
+      "note": "Frozen E9 flag is based on raw empirical mean, not a Wilson lower confidence bound."
+    }
+  },
+  "e11": {
+    "n_per_ablation": 240,
+    "FULL_B4": {"selection_rate": 0.125, "joint_qos_rate_unconditional": 0.125, "conditional_joint_qos": 1.0, "selected": 30, "joint_qos_successes": 30},
+    "NO_STATE_UNCERTAINTY": {"selection_rate": 0.16666666666666666, "joint_qos_rate_unconditional": 0.16666666666666666, "conditional_joint_qos": 1.0, "selected": 40, "joint_qos_successes": 40},
+    "NO_CFO": {"selection_rate": 0.125, "joint_qos_rate_unconditional": 0.125, "conditional_joint_qos": 1.0, "selected": 30, "joint_qos_successes": 30},
+    "NO_INTERFERENCE": {"selection_rate": 0.125, "joint_qos_rate_unconditional": 0.125, "conditional_joint_qos": 1.0, "selected": 30, "joint_qos_successes": 30},
+    "interpretation_boundary": "Within this frozen E11 state set, removing state uncertainty expands selection by 4.1667 percentage points. Removing CFO or interference does not change the aggregate selection/joint-QoS rates. This does not imply CFO or interference are physically irrelevant; separate communication stress tests show impairment sensitivity."
+  },
+  "artifact_sha256": "1aeabd05526bfda796cdebb0df45214c2a7c0f665044faa01dfbd7d8244bb722"
+}

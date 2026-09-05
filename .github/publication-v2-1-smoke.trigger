@@ -1,0 +1,2 @@
+publication_v2_1_smoke_gate=1
+purpose=verify_selector_calibration_before_final_evaluation

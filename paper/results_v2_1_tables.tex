@@ -1,0 +1,40 @@
+% Auto-generated from frozen v2.1 summary JSON. Do not edit numerical values manually.
+\begin{table}[t]
+\centering
+\caption{Frozen v2.1 policy-level reliability and availability results.}
+\label{tab:v21_policy}
+\begin{tabular}{lrrrr}
+\hline
+Policy & Selection (\%) & Joint QoS (\%) & Conditional QoS (\%) & 95\% Wilson LCB (cond.) \\
+\hline
+B0 FIXED & 92.36 & 59.04 & 63.93 & 63.17 \\
+B1 COMM ONLY & 75.32 & 52.59 & 69.83 & 69.03 \\
+B2 SENSING ONLY & 32.26 & 16.18 & 50.14 & 48.82 \\
+B3 DETERMINISTIC JOINT & 19.07 & 16.18 & 84.83 & 83.56 \\
+B4 ROBUST JOINT & 12.23 & 12.23 & 100.00 & 99.82 \\
+ORACLE & 66.67 & 66.67 & 100.00 & 99.97 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Frozen v2.1 E11 ablation results.}
+\label{tab:v21_e11}
+\begin{tabular}{lrrr}
+\hline
+Variant & Selection (\%) & Joint QoS (\%) & Conditional QoS (\%) \\
+\hline
+FULL B4 & 12.50 & 12.50 & 100.00 \\
+NO STATE UNCERTAINTY & 16.67 & 16.67 & 100.00 \\
+NO CFO & 12.50 & 12.50 & 100.00 \\
+NO INTERFERENCE & 12.50 & 12.50 & 100.00 \\
+\hline
+\end{tabular}
+\end{table}
+
+% Frozen paired-bootstrap result for manuscript text:
+% B4-B3 mean difference = -3.942 percentage points; 95% CI [-4.292, -3.600] pp.
+% B4-B0 mean difference = -46.808 percentage points; 95% CI [-47.700, -45.917] pp.
+% Claim boundary: these results do NOT support unconditional superiority of B4.
+% Hindsight ORACLE is a non-deployable reference and must be labeled as such.

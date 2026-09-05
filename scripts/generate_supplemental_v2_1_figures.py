@@ -5,14 +5,14 @@ Deterministic post-processing only. Values below are copied from successful
 GitHub Actions run 33975266575 at commit
 ef0e135b88c7c9647d72195f80884e380bc33cf6. This script does not rerun
 simulations, alter thresholds, or tune policies.
+
+Plotting dependencies are imported lazily so evidence-snapshot tests can inspect
+this module without requiring the optional paper-figure environment.
 """
 from pathlib import Path
-import matplotlib.pyplot as plt
-import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "paper" / "figures" / "v2_1_supplemental"
-OUT.mkdir(parents=True, exist_ok=True)
 
 UNCERTAINTY = {
     0.0: {"b3_sel": .1666666667, "b3_cond": 1.0, "b4_sel": .1666666667, "b4_cond": 1.0},
@@ -60,7 +60,22 @@ MOBILE_RMAX = 56.21108587500001
 MOBILE_VMAX = 48.66760681818181
 
 
+def _plotting():
+    """Load optional plotting dependencies only when figures are requested."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "Paper figure generation requires matplotlib and numpy; "
+            "install the optional plotting environment before running this script."
+        ) from exc
+    OUT.mkdir(parents=True, exist_ok=True)
+    return plt, np
+
+
 def uncertainty_figure():
+    plt, np = _plotting()
     x = np.array(sorted(UNCERTAINTY))
     fig, ax = plt.subplots(figsize=(7.2, 4.5))
     ax.plot(x, [UNCERTAINTY[v]["b3_cond"] for v in x], marker="o", label="B3 conditional joint QoS")
@@ -73,6 +88,7 @@ def uncertainty_figure():
 
 
 def ablation_figure():
+    plt, np = _plotting()
     labels = list(ABLATIONS); x = np.arange(len(labels)); w = .36
     fig, ax = plt.subplots(figsize=(7.4, 4.4))
     ax.bar(x-w/2, [ABLATIONS[k][0] for k in labels], w, label="Selection rate")
@@ -83,6 +99,7 @@ def ablation_figure():
 
 
 def runtime_figure():
+    plt, np = _plotting()
     draws = np.array(sorted(RUNTIME_MS))
     fig, ax = plt.subplots(figsize=(7.2, 4.4))
     ax.plot(draws, [RUNTIME_MS[d][0] for d in draws], marker="o", label="B3 median")
@@ -93,6 +110,7 @@ def runtime_figure():
 
 
 def physics_figure():
+    plt, np = _plotting()
     z = np.zeros((len(VELOCITIES), len(RANGES)))
     for i, v in enumerate(VELOCITIES):
         for j, r in enumerate(RANGES):
@@ -107,6 +125,7 @@ def physics_figure():
 
 
 def mismatch_figure():
+    plt, np = _plotting()
     y = np.arange(len(MISMATCH))
     fig, ax = plt.subplots(figsize=(8.0, 6.0))
     ax.scatter([x[1] for x in MISMATCH], y, label="B3")

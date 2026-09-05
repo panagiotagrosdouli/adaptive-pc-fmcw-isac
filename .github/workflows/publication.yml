@@ -15,11 +15,18 @@ on:
         description: 'Sensing Monte Carlo trials per policy evaluation'
         required: true
         default: '3'
+  push:
+    paths:
+      - '.github/publication-run.trigger'
 
 jobs:
   publication:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+      PUB_N_SEEDS: ${{ github.event.inputs.n_seeds || '1000' }}
+      PUB_COMM_BITS: ${{ github.event.inputs.comm_bits || '20000' }}
+      PUB_SENSING_TRIALS: ${{ github.event.inputs.sensing_trials || '3' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,7 +38,7 @@ jobs:
       - name: E1-E5 frozen validation
         run: python scripts/run_e1_e5_validation.py --output artifacts/publication/e1_e5_validation.json
       - name: E6-E12 frozen paired benchmark
-        run: python scripts/run_e6_e12_benchmark.py --n-seeds ${{ inputs.n_seeds }} --comm-bits ${{ inputs.comm_bits }} --sensing-trials ${{ inputs.sensing_trials }} --output artifacts/publication/e6_e12_benchmark.json
+        run: python scripts/run_e6_e12_benchmark.py --n-seeds "$PUB_N_SEEDS" --comm-bits "$PUB_COMM_BITS" --sensing-trials "$PUB_SENSING_TRIALS" --output artifacts/publication/e6_e12_benchmark.json
       - name: Record immutable provenance
         run: |
           python - <<'PY'
@@ -41,9 +48,9 @@ jobs:
               'evidence_class': 'FROZEN_SIMULATION_PUBLICATION_CANDIDATE_NOT_HARDWARE_MEASUREMENT',
               'git_sha': os.environ['GITHUB_SHA'],
               'workflow_run_id': os.environ['GITHUB_RUN_ID'],
-              'n_seeds': int('${{ inputs.n_seeds }}'),
-              'comm_bits': int('${{ inputs.comm_bits }}'),
-              'sensing_trials': int('${{ inputs.sensing_trials }}'),
+              'n_seeds': int(os.environ['PUB_N_SEEDS']),
+              'comm_bits': int(os.environ['PUB_COMM_BITS']),
+              'sensing_trials': int(os.environ['PUB_SENSING_TRIALS']),
           }, indent=2, sort_keys=True))
           PY
       - name: Upload frozen publication artifacts

@@ -1,0 +1,131 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{multirow}
+
+\title{Physics-Gated Reliability-Constrained Adaptive Phase-Coded FMCW ISAC for High-Mobility Vehicular Links}
+
+\author{Anonymous Author(s)%
+\thanks{Manuscript prepared from the frozen publication-v2.1 simulation study and reviewer-grade supplemental evidence. Author names and affiliations are intentionally left for submission-time insertion.}}
+
+\begin{document}
+\maketitle
+
+\input{final_abstract_conclusion_abstract_only}
+
+\begin{IEEEkeywords}
+Integrated sensing and communication, phase-coded FMCW, automotive radar, robust PHY adaptation, chance constraints, high mobility, physical feasibility, vehicular communications.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+Phase-coded frequency-modulated continuous-wave (PC-FMCW) signaling is attractive for integrated sensing and communication (ISAC) because a common FMCW carrier can retain range--Doppler sensing structure while phase coding carries communication information. Prior PC-FMCW studies have demonstrated the basic sensing--communication principle experimentally and have investigated interference resilience \cite{kumbul2021experimental,kumbul2024interference}. More recently, phase-coded FMCW has also been used in an optical laser-headlamp architecture that combines sensing, communication, and illumination \cite{liu2026laserheadlamp}. These results establish functional feasibility, but they do not resolve a different problem that appears in high-mobility vehicular operation: a configuration that is nominally attractive can be physically incapable of representing the requested range or radial velocity, or can violate communication and sensing QoS once state uncertainty, synchronization residuals, and interference are considered.
+
+This paper therefore moves the research question from fixed-configuration feasibility to reliable adaptive operation. We study an RF/mmWave \SI{77}{GHz} vehicular PC-FMCW physical layer and ask which configuration should be selected, given imperfect knowledge of the link and sensing state, so that communication and sensing QoS are jointly supported with a declared reliability while physical resources remain controlled. The design uses two ordered stages. A PC-FMCW-specific physical feasibility gate first removes configurations that violate sampling, range, or unambiguous-velocity limits. A robust reliability selector then chooses the minimum-cost admissible action satisfying joint communication and sensing constraints under an uncertainty distribution.
+
+The main contributions are as follows:
+\begin{itemize}
+    \item A reproducible PC-FMCW system model that explicitly separates the one-way remote communication path from the two-way monostatic sensing echo and models radar sampling at dechirped IF rather than at the \SI{77}{GHz} carrier.
+    \item A physics-gated finite-action adaptation framework based on waveform bandwidth, chirp slope, IF sampling, maximum range, chirp repetition interval, and unambiguous radial velocity.
+    \item A reliability-constrained joint PHY selector over waveform profile, phase-code/chip budget, transmit-power backoff, and repetition resources under uncertain SNR, residual CFO/synchronization error, interference, and phase-noise state.
+    \item A feasible-operating-region evaluation that distinguishes hard physical infeasibility, policy abstention, and selected-action failure, rather than collapsing these outcomes into a single success rate.
+    \item A frozen paired Monte-Carlo comparison and reviewer-grade uncertainty, ablation, mismatch, Pareto, and runtime analysis demonstrating a reliability--availability--complexity trade-off instead of unconditional superiority.
+\end{itemize}
+
+The scope is deliberately PHY-level. The work does not perform trajectory forecasting, ego-motion planning, packet/user scheduling, beam management, adaptive driving-beam illumination, or optical headlamp control.
+
+\section{Related Work and Positioning}
+\label{sec:related}
+The experimental PC-FMCW literature has established that phase coding can combine communication capability with FMCW-style sensing using realizable automotive-radar receiver structures \cite{kumbul2021experimental}. Separate work has shown that phase coding can improve robustness to mutual automotive-radar interference \cite{kumbul2024interference}. These contributions motivate the waveform family and interference model used here, but the present paper does not claim novelty for phase coding itself, DPSK embedding, range--Doppler processing, or generic joint sensing and communication.
+
+The closest conceptual predecessor to the broader vehicular integration theme is the phase-coded FMCW laser-headlamp ISCAI architecture \cite{liu2026laserheadlamp}. That system addresses optical sensing, communication, and adaptive illumination. The present work is independent in both medium and optimization objective: it studies a \SI{77}{GHz} RF/mmWave PC-FMCW PHY and adapts the physical-layer configuration under high-mobility uncertainty. The unit of control is neither the vehicle trajectory nor a packet queue, beam, or illumination pattern.
+
+The distinguishing question is therefore not whether PC-FMCW can support sensing and communication, but where it can do so reliably. This motivates a two-layer formulation in which deterministic waveform physics is enforced before stochastic reliability optimization.
+
+\section{System Model}
+\label{sec:system}
+\subsection{PC-FMCW Transmit Signal}
+For chirp index $m$ and fast time $t$, the idealized transmitted waveform is
+\begin{equation}
+ s_m(t)=\sqrt{P_m}\exp\left\{j\left[\pi\mu t^2+\phi_m(t)\right]\right\},
+\end{equation}
+where $\mu=B/T_c$ is the chirp slope, $B$ is sweep bandwidth, $T_c$ is active chirp duration, $P_m$ is transmit power, and $\phi_m(t)$ is the phase-coded communication sequence. Multiple phase-code chips may be carried in one chirp.
+
+\subsection{Monostatic Sensing Path}
+For target range $R$ and radial velocity $v$, the sensing echo uses the two-way delay and Doppler
+\begin{equation}
+ \tau_r=\frac{2R}{c}, \qquad f_{D,r}=\frac{2vf_c}{c}.
+\end{equation}
+After dechirping, the practical radar ADC samples the IF/beat signal. Under the sign convention used in the reference simulator,
+\begin{equation}
+ f_b=\mu\tau_r+f_{D,r}.
+\end{equation}
+Slow-time phase advances with the chirp repetition interval $T_r$. Doppler is estimated before its contribution is removed from the beat frequency for range recovery.
+
+\subsection{One-Way Communication Path}
+The remote communication receiver experiences
+\begin{equation}
+ \tau_c=\frac{R}{c}, \qquad f_{D,c}=\frac{vf_c}{c}.
+\end{equation}
+The synchronized receiver removes the known FMCW chirp and decodes the remaining phase sequence. A transparent multi-chip DBPSK modem is used as the communication reference. In AWGN its analytical bit-error probability is
+\begin{equation}
+ P_b=\frac{1}{2}\exp(-E_b/N_0),
+\end{equation}
+and residual frequency error after nominal synchronization is modeled explicitly.
+
+\section{Physical Feasibility and Adaptive PHY Formulation}
+\label{sec:method}
+\subsection{PC-FMCW Capability Gate}
+For each profile, the simulator derives the fundamental capability quantities
+\begin{align}
+ \Delta R &= \frac{c}{2B},\\
+ R_{\max}^{(+\mathrm{IF})} &= \frac{cF_s}{4\mu},\\
+ v_{\max} &= \frac{\lambda}{4T_r},\\
+ \Delta v &= \frac{\lambda}{2N_cT_r},
+\end{align}
+where $F_s$ is IF sample rate and $N_c$ is the number of chirps used for slow-time processing. A candidate profile is excluded whenever the requested operating state lies outside its declared physical support. This gate is deterministic and precedes any learned, empirical, or Monte-Carlo reliability estimate.
+
+The source-grounded short-range profile uses a \SI{77}{GHz} carrier, \SI{858}{MHz} valid sweep, $T_c=\SI{25.6}{\micro s}$, $T_r=\SI{115.8}{\micro s}$, $F_s=\SI{10}{MSPS}$, 256 samples/chirp, and 64 chirps/frame, following a Texas Instruments automated-parking reference profile \cite{tiParking}. Its derived positive-IF range support is approximately \SI{22.36}{m} and its monostatic unambiguous radial-velocity support is approximately \SI{8.41}{m/s}. A separate high-mobility capability profile uses a \SI{1}{GHz} sweep and \SI{20}{\micro s} timing with \SI{37.5}{MSPS} sampling, giving approximately \SI{56.21}{m} positive-IF range support and \SI{48.67}{m/s} unambiguous radial-velocity support. The latter is a composite capability reference, not a claimed commercial preset.
+
+\subsection{Finite PHY Action}
+The controller selects from a finite action set containing profile choice, chips per chirp, transmit-power backoff, and repetition factor. Let $a\in\mathcal{A}$ denote an action and let $S$ denote the uncertain physical/link state, including SNR or $E_b/N_0$, Doppler/residual frequency error, interference, phase-noise state, range, velocity, and estimation uncertainty.
+
+The physical gate defines $\mathcal{A}_{\mathrm{phys}}(\hat S)\subseteq\mathcal{A}$. Among admissible actions, the robust controller solves
+\begin{align}
+ \min_{a\in\mathcal{A}_{\mathrm{phys}}(\hat S)} \quad & C_{\mathrm{resource}}(a)\\
+ \text{s.t.}\quad
+ &\Pr\{\mathrm{BER}(a,S)\le\epsilon_{\mathrm{comm}}\}\ge 1-\alpha,\\
+ &\Pr\{\mathrm{RMSE}_{R}(a,S)\le\delta_R\}\ge 1-\beta_R,\\
+ &\Pr\{\mathrm{RMSE}_{v}(a,S)\le\delta_v\}\ge 1-\beta_v,\\
+ &\Pr\{\mathrm{joint\ QoS}(a,S)\}\ge 1-\eta,\\
+ &R_{\mathrm{eff}}(a,S)\ge R_{\min},
+\end{align}
+when the corresponding rate constraint applies. If no candidate passes, the controller abstains. Physical infeasibility and robust abstention are recorded separately.
+
+\section{Evaluation Protocol}
+\label{sec:protocol}
+The frozen publication-v2.1 protocol declares communication BER $\le10^{-3}$, effective rate $\ge\SI{100}{kbps}$, range RMSE $\le\SI{1}{m}$, velocity RMSE $\le\SI{1}{m/s}$, and a target joint reliability of 0.95. The action space contains 54 combinations generated from 16, 32, or 64 chips per chirp; transmit-power backoff of 0, 3, or \SI{6}{dB}; repetition factors 1, 2, or 4; and profile selection.
+
+Six policies are compared on common support: B0 fixed PHY, B1 communication-only adaptation, B2 sensing-only adaptation, B3 deterministic joint adaptation at the estimated state, B4 robust joint adaptation under the estimated state distribution, and a hindsight Oracle using true receiver-level state as a non-deployable reference. The frozen benchmark uses 1000 final seeds, paired policy evaluation, 10,000 bootstrap resamples for paired differences, and Wilson lower confidence bounds for reliability statements. Supplemental reviewer experiments use smaller dedicated state banks and do not replace the frozen primary benchmark.
+
+All numerical outputs in this paper are controlled simulation or analytical evidence. Literature-grounded hardware constants and externally reported measurements are retained as provenance and are not represented as measurements produced by this work.
+
+\input{results_v2_1_tables}
+\input{supplemental_v2_1_tables}
+\input{final_results_discussion}
+
+\section{Limitations}
+\label{sec:limitations}
+The reliability conclusions are conditional on the declared uncertainty families and finite action set. Severe SNR or interference mismatch can invalidate the robust guarantee, as shown in the supplemental mismatch banks. The communication receiver is a transparent DBPSK reference implementation rather than a measured automotive communication standard, and the phase-noise specification is not converted into a stochastic oscillator model without additional assumptions. The high-mobility profile is a composite capability reference. Finally, runtime is measured for an unoptimized Python implementation on GitHub Actions infrastructure rather than an embedded automotive target; hardware validation is required before deployment-level latency, energy, or measurement claims can be made.
+
+\input{final_abstract_conclusion_conclusion_only}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references_v2_1}
+
+\end{document}

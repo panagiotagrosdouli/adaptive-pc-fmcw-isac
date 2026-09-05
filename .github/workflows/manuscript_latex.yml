@@ -1,0 +1,39 @@
+name: Manuscript LaTeX Audit
+
+on:
+  pull_request:
+    paths:
+      - 'paper/**'
+      - '.github/workflows/manuscript_latex.yml'
+  workflow_dispatch:
+
+jobs:
+  latex-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended
+      - name: Build IEEE manuscript
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error manuscript_v2_1.tex
+      - name: Fail on unresolved citations or references
+        working-directory: paper
+        run: |
+          if grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations" manuscript_v2_1.log; then
+            echo 'Unresolved citation/reference detected.'
+            exit 1
+          fi
+      - name: Report layout warnings
+        working-directory: paper
+        run: |
+          grep -E "Overfull \\hbox|Underfull \\hbox" manuscript_v2_1.log || true
+      - name: Upload compiled manuscript and log
+        uses: actions/upload-artifact@v4
+        with:
+          name: manuscript-v2-1-pdf
+          path: |
+            paper/manuscript_v2_1.pdf
+            paper/manuscript_v2_1.log

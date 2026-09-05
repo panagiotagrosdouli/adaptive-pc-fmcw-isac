@@ -16,4 +16,15 @@ jobs:
       - run: python -m pip install -e .[dev]
       - run: pytest -q
       - name: Stage 7 validation smoke test
-        run: python scripts/run_stage7_validation.py --sensing-trials 1 --high-mobility-trials 1 --comm-bits 2000 --output /tmp/stage7-smoke.json
+        run: python scripts/run_stage7_validation.py --sensing-trials 1 --high-mobility-trials 1 --comm-bits 2000 --output artifacts/ci/stage7_smoke.json
+      - name: E1-E5 executable validation smoke test
+        run: python scripts/run_e1_e5_validation.py --output artifacts/ci/e1_e5_smoke.json
+      - name: E6-E12 paired policy benchmark smoke test
+        run: python scripts/run_e6_e12_benchmark.py --n-seeds 2 --comm-bits 2000 --sensing-trials 1 --output artifacts/ci/e6_e12_smoke.json
+      - name: Upload simulation smoke artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-smoke-${{ github.sha }}
+          path: artifacts/ci/*.json
+          if-no-files-found: error
+          retention-days: 30

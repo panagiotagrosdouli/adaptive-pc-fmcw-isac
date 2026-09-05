@@ -1,0 +1,62 @@
+% Final Results and Discussion narrative for publication v2.1.
+% Evidence basis:
+% - frozen main benchmark: GitHub Actions run 33967030983
+% - supplemental reviewer evidence: GitHub Actions run 33975266575
+% All numerical values are simulation/analytical outputs, not hardware measurements.
+
+\section{Results and Discussion}
+\label{sec:results-discussion}
+
+\subsection{Frozen paired benchmark}
+
+The frozen v2.1 benchmark evaluates six policies over the same 12,000 operating-state/seed pairs per policy, yielding 72,000 receiver-level evaluations in total. The fixed policy B0 selects in 92.36\% of cases and attains 59.04\% unconditional joint QoS, whereas the deterministic joint controller B3 selects in 19.07\% of cases and attains 16.18\% unconditional joint QoS. The proposed robust controller B4 is substantially more selective: it acts in only 12.23\% of evaluated cases and abstains in 87.77\%. Its unconditional joint-QoS probability is therefore 12.23\%, lower than both B0 and B3.
+
+This reduction in unconditional availability is not a statistical ambiguity. The paired B4--B3 difference in unconditional joint QoS is $-0.03942$, with a 95\% paired-bootstrap interval of $[-0.04292,-0.03600]$ over 12,000 paired observations and 10,000 bootstrap resamples. Likewise, the B4--B0 difference is $-0.46808$ with a 95\% interval of $[-0.47700,-0.45917]$. Consequently, the frozen evidence does not support a claim that robust adaptation maximizes unconditional joint QoS.
+
+Conditioned on selection, however, the behavior changes qualitatively. B3 achieves 84.83\% conditional joint QoS, while B4 succeeds in all 1,468 selected cases. The corresponding one-sided 95\% Wilson lower bound for B4 is 99.816\%, well above the declared 95\% reliability target. The central empirical result is therefore a reliability--availability trade-off: B4 does not enlarge the operating region; it contracts the operating region until the retained states are highly reliable under the declared uncertainty model.
+
+The hindsight Oracle selects 66.67\% of cases and has conditional joint QoS equal to one by construction because it uses true receiver-level state information unavailable to deployable policies. It is therefore reported only as a reference, not as an implementable upper bound on computationally causal control.
+
+\subsection{Effect of state uncertainty}
+
+The supplemental uncertainty sweep isolates the distinction between deterministic and robust joint adaptation. At uncertainty scale zero, B3 and B4 coincide: both select 16.67\% of cases and achieve 100\% conditional joint QoS. As uncertainty increases, B3 continues to admit a comparatively broad set of states, but its conditional reliability degrades. At uncertainty scale one, B3 selects 18.50\% with 87.39\% conditional joint QoS, while B4 selects 12.50\% and preserves 100\%. At scale two, B3 selects 20.33\% with 68.03\% conditional reliability, whereas B4 contracts to 9.75\% selection and again retains 100\% observed conditional joint QoS.
+
+At the most severe tested scale of three, B3 conditional joint QoS falls to 62.04\%. B4 selects only 5.92\% of cases and achieves 98.59\% observed conditional joint QoS. This point must be interpreted cautiously: its one-sided 95\% Wilson lower bound is 93.93\%, below the declared 95\% target. Thus, the strongest uncertainty setting identifies a confidence-qualified failure boundary even though the raw point estimate remains high. This is consistent with the intended role of B4: robust uncertainty treatment preserves reliability over a smaller region, but it does not provide unlimited protection as model uncertainty grows.
+
+\subsection{Why the physics gate and joint constraint matter}
+
+The extended ablation study separates the effects of physical feasibility, uncertainty modeling, and the joint sensing--communication constraint. FULL\_B4 selects 12.50\% of the ablation bank, achieves 100\% observed conditional joint QoS, and has a 95\% Wilson lower bound of 98.23\%. Removing the state-uncertainty model expands selection to 20.00\% but reduces conditional joint QoS to 80.83\%. Removing the joint constraint expands selection further to 67.25\%, while conditional joint QoS decreases to 85.50\%.
+
+The most extreme ablation is the removal of the physical feasibility gate. In this frozen supplemental design, the ungated variant selects 31.67\% of states but achieves 0\% joint QoS. This does not imply that every conceivable ungated controller must fail. Rather, it demonstrates that optimization over candidate PHY profiles is scientifically ill-posed if actions that violate hard range or unambiguous-velocity limits are allowed to compete with physically admissible actions.
+
+The source-grounded profile limits make this distinction explicit. The short-range parking profile supports approximately 22.36~m positive-IF range and 8.41~m/s unambiguous radial velocity, while the high-mobility capability profile supports approximately 56.21~m and 48.67~m/s. The resulting range--velocity map therefore contains three physically distinct regions: no feasible profile, high-mobility-only feasibility, and overlap where both profiles are admissible. Policy abstention should not be conflated with this hard physical infeasibility.
+
+\subsection{Model mismatch and impairment robustness}
+
+The supplemental mismatch experiments show that robust adaptation can provide meaningful resilience to moderate under-modeling, while also exposing clear failure boundaries. When the controller assumes 500~Hz residual CFO but the actual residual is between 1 and 5~kHz, B3 attains approximately 87--88\% joint QoS in the evaluated 100-seed banks, whereas B4 attains 100\%. When a 20~m/s Doppler condition is assumed and the actual radial speed is 25--40~m/s, B3 attains 86\% and B4 again attains 100\% in the tested banks. For interference under-modeling from assumed INR $-10$~dB to actual INR 0~dB, B3 falls to 18\%, while B4 reaches 86\%.
+
+These gains are not universal. At actual INR values of 10 or 20~dB, both B3 and B4 fail in the tested mismatch bank. Likewise, when the controller assumes 12~dB SNR but the actual SNR is only 8~dB, B4 joint QoS falls to 17\%, and at 6~dB both policies fail. These negative results are important because they delimit the uncertainty set within which robust adaptation remains useful. They also prevent interpreting the proposed controller as a substitute for accurate synchronization, interference suppression, or link-quality estimation.
+
+\subsection{Communication and sensing impairment evidence}
+
+The waveform-level validation provides an independent physical explanation for the policy-level behavior. For differential communication at 8~dB, the residual-frequency stress test shows BER increasing from approximately $9\times10^{-4}$ near zero residual offset to approximately $3.2\times10^{-2}$ around 5~kHz. This establishes that residual Doppler/synchronization error at vehicular scales can materially affect communication reliability and therefore must remain an explicit state variable.
+
+The sensing validation similarly shows a sharp SNR-dependent transition rather than a uniformly benign estimator. For the short-range profile at 10~m and 3~m/s, range RMSE is several metres at very low IF-SNR but falls to centimetre-scale once the estimator is within its usable regime. For the high-mobility profile at approximately 20.28~m and 19.86~m/s, the target lies outside the parking profile's unambiguous-velocity support but within the high-mobility profile's physical support. This is precisely the type of case for which physics-gated profile selection is required before statistical reliability optimization.
+
+\subsection{Resource trade-offs}
+
+The reported resource analysis separates physical decision variables from the experiment-defined normalized cost. The supplemental Pareto representation reports transmit-power fraction, chips per chirp, repetition factor, ADC samples per frame, effective rate, and sensing accuracy directly. In the frozen main output, one reported B4 operating point uses 16 chips/chirp, repetition factor one, transmit-power fraction 0.2512, and 96,000 ADC samples/frame, with observed conditional joint QoS equal to one over 828 observations. The normalized resource cost associated with the frozen optimization is dimensionless and must not be interpreted as energy in joules.
+
+The broader implication is that robust reliability is not obtained for free. B4 sacrifices operating-region availability and, for some selected states, requires a more conservative resource allocation than deterministic adaptation. The correct comparison is therefore multi-objective: reliability, availability, effective rate, sensing accuracy, and physical resource usage must be considered jointly rather than collapsed into a single unconditional-success metric.
+
+\subsection{Runtime and implementation limitation}
+
+The current Python reference implementation is not yet a real-time vehicular controller at the frozen B4 setting. Median B3 decision latency is approximately 0.44~ms. B4 scales approximately linearly with the number of uncertainty draws: 30.71~ms at 64 draws, 61.03~ms at 128, 121.36~ms at 256, and 240.44~ms at 512. These are prototype timings on the GitHub Actions execution platform, not embedded-target measurements.
+
+Accordingly, no real-time deployment claim is made for the 512-draw implementation. The timing result instead motivates algorithmic optimization through action pruning after the physical gate, vectorized uncertainty evaluation, parallel sampling, cached surrogate models, and reduced-draw or sequential confidence tests. The physical gate is especially useful here because it can remove impossible candidates before the expensive robust reliability evaluation.
+
+\subsection{Overall interpretation and claim boundary}
+
+Taken together, the frozen and supplemental evidence supports a narrower and more defensible conclusion than an unconditional-superiority narrative. Robust physics-gated PC-FMCW adaptation identifies a conservative subset of the high-mobility operating space in which selected actions achieve substantially higher conditional joint sensing--communication reliability under state uncertainty and several forms of moderate model mismatch. This gain is purchased by a pronounced reduction in availability and by higher computational cost.
+
+The evidence does not support the claims that B4 maximizes unconditional joint QoS, remains reliable under arbitrary SNR or interference mismatch, or is already real-time at 512 uncertainty draws. All reported numerical results are simulation or analytical evidence; none are hardware measurements. The principal contribution is therefore the explicit characterization of the physically feasible and statistically reliable operating region, together with the demonstrated reliability--availability--complexity trade-off induced by robust PC-FMCW PHY adaptation.

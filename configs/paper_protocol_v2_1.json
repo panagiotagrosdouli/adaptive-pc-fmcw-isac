@@ -1,0 +1,83 @@
+{
+  "protocol_id": "pcfmcw_isac_paper_v2_1",
+  "parent_protocol_id": "pcfmcw_isac_paper_v2",
+  "status": "FROZEN_BEFORE_V2_1_FINAL_EVALUATION",
+  "evidence_scope": "SIMULATION_AND_ANALYTICAL_EVIDENCE_NOT_HARDWARE_MEASUREMENT",
+  "rationale": "Mandatory v2 smoke gate exposed a selector-model defect: the v1/v2 sensing guard clipped the SNR penalty at unity, making sensing QoS non-binding and collapsing B1 and B3. V2.1 corrects only this selector-side SNR scaling. QoS thresholds, receiver-level evaluation, action set, seed bank, and statistical rules are unchanged.",
+  "qos": {
+    "ber_max": 0.001,
+    "effective_rate_min_bps": 100000,
+    "range_rmse_max_m": 1.0,
+    "velocity_rmse_max_mps": 1.0,
+    "joint_reliability_target": 0.95
+  },
+  "policies": [
+    "B0_FIXED",
+    "B1_COMM_ONLY",
+    "B2_SENSING_ONLY",
+    "B3_DETERMINISTIC_JOINT",
+    "B4_ROBUST_JOINT",
+    "ORACLE"
+  ],
+  "v2_1_semantics": {
+    "selector_sensing_guard": "range_or_velocity_resolution_divided_by_sqrt_linear_if_snr_without_unit_floor",
+    "selector_calibration_is_not_qos_threshold_change": true,
+    "b4_internal_draws": 512,
+    "b4_reliability_confidence": 0.95,
+    "b4_acceptance_rule": "one_sided_wilson_lower_bound_gte_joint_reliability_target",
+    "b4_action_local_rng": true,
+    "b4_internal_rng_independent_of_final_evaluation": true,
+    "oracle_definition": "hindsight_true_state_receiver_level_minimum_declared_resource_cost_reference",
+    "oracle_is_deployable_policy": false,
+    "no_post_hoc_threshold_tuning": true
+  },
+  "paired_benchmark": {
+    "state_bank": "publication_benchmark.benchmark_states",
+    "n_scenarios_per_seed": 12,
+    "seed_start": 10000,
+    "n_seeds_final": 1000,
+    "comm_bits_final": 20000,
+    "sensing_trials_final": 3,
+    "paired_comparisons": true,
+    "bootstrap_confidence": 0.95,
+    "bootstrap_resamples": 10000
+  },
+  "smoke_gate": {
+    "must_pass_before_final_run": true,
+    "oracle_not_below_best_deployable": true,
+    "b1_b3_are_distinguishable": true,
+    "smoke_results_are_not_final_paper_results": true
+  },
+  "e9_feasible_region": {
+    "required_slices": [
+      ["ebn0_db", "radial_velocity_mps"],
+      ["residual_cfo_hz", "inr_db"],
+      ["if_snr_db", "range_m"]
+    ],
+    "report_selection_rate": true,
+    "report_unconditional_joint_qos": true
+  },
+  "e10_resource_reporting": {
+    "coordinates": [
+      "tx_power_fraction",
+      "repetition_factor",
+      "chips_per_chirp",
+      "profile_adc_samples_per_frame"
+    ],
+    "normalized_resource_cost_is_synthetic_index": true,
+    "do_not_label_normalized_cost_as_joules": true
+  },
+  "e11_ablations": [
+    "FULL_B4",
+    "NO_STATE_UNCERTAINTY",
+    "NO_CFO",
+    "NO_INTERFERENCE"
+  ],
+  "claim_rules": {
+    "retain_negative_results": true,
+    "oracle_anomaly_blocks_paper_ready_status": true,
+    "b1_b3_collapse_blocks_paper_ready_status": true,
+    "b4_superiority_requires_paired_ci_excluding_zero": true,
+    "reliability_wording": "empirically satisfies the declared reliability target under the evaluated uncertainty model"
+  }
+}

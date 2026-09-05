@@ -1,0 +1,55 @@
+name: Frozen Publication Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      n_seeds:
+        description: 'Number of frozen final seeds (1-1000)'
+        required: true
+        default: '1000'
+      comm_bits:
+        description: 'DBPSK bits per policy evaluation'
+        required: true
+        default: '20000'
+      sensing_trials:
+        description: 'Sensing Monte Carlo trials per policy evaluation'
+        required: true
+        default: '3'
+
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e .[dev]
+      - run: pytest -q
+      - name: E1-E5 frozen validation
+        run: python scripts/run_e1_e5_validation.py --output artifacts/publication/e1_e5_validation.json
+      - name: E6-E12 frozen paired benchmark
+        run: python scripts/run_e6_e12_benchmark.py --n-seeds ${{ inputs.n_seeds }} --comm-bits ${{ inputs.comm_bits }} --sensing-trials ${{ inputs.sensing_trials }} --output artifacts/publication/e6_e12_benchmark.json
+      - name: Record immutable provenance
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path('artifacts/publication/provenance.json')
+          p.write_text(json.dumps({
+              'evidence_class': 'FROZEN_SIMULATION_PUBLICATION_CANDIDATE_NOT_HARDWARE_MEASUREMENT',
+              'git_sha': os.environ['GITHUB_SHA'],
+              'workflow_run_id': os.environ['GITHUB_RUN_ID'],
+              'n_seeds': int('${{ inputs.n_seeds }}'),
+              'comm_bits': int('${{ inputs.comm_bits }}'),
+              'sensing_trials': int('${{ inputs.sensing_trials }}'),
+          }, indent=2, sort_keys=True))
+          PY
+      - name: Upload frozen publication artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-publication-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/publication/*.json
+          if-no-files-found: error
+          retention-days: 90

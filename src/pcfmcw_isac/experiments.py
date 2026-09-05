@@ -1,28 +1,50 @@
 """Reproducible experiment-grid utilities for publication runs."""
 from __future__ import annotations
-from dataclasses import dataclass, asdict
-from itertools import product
+
+from dataclasses import asdict
 import json
 from pathlib import Path
+from typing import Iterable
 
-@dataclass(frozen=True)
-class ExperimentPoint:
-    snr_db: float
-    velocity_mps: float
-    cfo_hz: float
-    phase_noise_std_rad: float
-    inr_db: float | None
-    seed: int
+from .publication_protocol import (
+    EvaluationState,
+    FrozenPublicationProtocol,
+    FROZEN_PROTOCOL_V1,
+)
 
 
-def grid(snr_db=(-10, 0, 10, 20, 30), velocity_mps=(0, 10, 30, 50),
-         cfo_hz=(0, 100, 500), phase_noise_std_rad=(0.0, 1e-3, 1e-2),
-         inr_db=(None, -10, 0, 10), seeds=range(10)) -> list[ExperimentPoint]:
-    return [ExperimentPoint(*v) for v in product(snr_db, velocity_mps, cfo_hz,
-                                                  phase_noise_std_rad, inr_db, seeds)]
+def publication_states(
+    *,
+    protocol: FrozenPublicationProtocol = FROZEN_PROTOCOL_V1,
+    seeds: Iterable[int] | None = None,
+) -> Iterable[EvaluationState]:
+    """Yield states from the frozen publication protocol.
+
+    Final evaluation should use the default seed family. Tests/pilot smoke runs
+    may provide an explicit small seed iterable, but their outputs must not be
+    mixed with frozen final statistics.
+    """
+    protocol.validate()
+    return protocol.states(seeds=seeds)
 
 
-def write_manifest(points: list[ExperimentPoint], path: str | Path) -> None:
+def write_manifest(
+    points: Iterable[EvaluationState],
+    path: str | Path,
+    *,
+    protocol: FrozenPublicationProtocol = FROZEN_PROTOCOL_V1,
+) -> None:
+    """Write a machine-readable experiment manifest with protocol metadata."""
+    protocol.validate()
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps([asdict(x) for x in points], indent=2), encoding="utf-8")
+    payload = {
+        "protocol_id": protocol.protocol_id,
+        "qos": asdict(protocol.qos),
+        "final_seed_start": protocol.final_seed_start,
+        "n_final_seeds": protocol.n_final_seeds,
+        "bootstrap_confidence": protocol.bootstrap_confidence,
+        "bootstrap_resamples": protocol.bootstrap_resamples,
+        "states": [asdict(x) for x in points],
+    }
+    p.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

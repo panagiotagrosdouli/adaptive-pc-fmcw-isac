@@ -1,0 +1,44 @@
+{
+  "protocol_id": "pcfmcw_isac_paper_v1",
+  "status": "FROZEN_BEFORE_FINAL_EVALUATION",
+  "claim_boundary": "Model-based Monte-Carlo study; source-derived parameters and external measurements are not new measurements by this project.",
+  "profiles": ["ti_77ghz_parking_profile", "ti_77ghz_high_mobility_capability_profile"],
+  "qos": {
+    "ber_max": 0.001,
+    "effective_rate_min_bps": 100000.0,
+    "range_rmse_max_m": 1.0,
+    "velocity_rmse_max_mps": 1.0,
+    "joint_reliability_target": 0.95
+  },
+  "action_space": {
+    "chips_per_chirp": [16, 32, 64],
+    "tx_power_backoff_db": [0.0, 3.0, 6.0],
+    "repetition_factor": [1, 2, 4],
+    "profile_selection": true
+  },
+  "evaluation_grid": {
+    "ebn0_db": [-4, 0, 4, 8, 12, 16],
+    "if_snr_db": [-10, -5, 0, 5, 10, 15, 20],
+    "range_m": [5, 10, 20, 30, 40, 50],
+    "radial_velocity_mps": [-50, -30, -10, 0, 10, 30, 50],
+    "residual_cfo_hz": [0, 500, 1000, 2000, 5000],
+    "inr_db": [null, -10, 0, 10],
+    "phase_noise_std_rad_per_sample": [0.0, 0.001, 0.01],
+    "state_uncertainty_scale": [0.0, 0.5, 1.0, 2.0]
+  },
+  "policies": ["B0_FIXED", "B1_COMM_ONLY", "B2_SENSING_ONLY", "B3_DETERMINISTIC_JOINT", "B4_ROBUST_JOINT", "ORACLE"],
+  "final_statistics": {
+    "seed_start": 10000,
+    "n_seeds": 1000,
+    "bootstrap_confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "paired_policy_comparisons": true,
+    "retain_negative_results": true
+  },
+  "freeze_rules": {
+    "no_threshold_tuning_after_final_run": true,
+    "no_action_space_tuning_after_final_run": true,
+    "pilot_seeds_excluded_from_final_statistics": true,
+    "all_final_artifacts_record_commit_sha": true
+  }
+}

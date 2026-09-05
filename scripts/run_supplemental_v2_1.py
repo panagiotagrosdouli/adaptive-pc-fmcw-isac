@@ -2,13 +2,15 @@
 """Run reviewer-grade supplemental publication-v2.1 experiments.
 
 These experiments are supplemental to, and do not replace, the immutable frozen
-v2.1 benchmark.  Outputs are simulation/analytical evidence, not measurements.
+v2.1 benchmark. Outputs are simulation/analytical evidence, not measurements.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
+from typing import Any
 
 from pcfmcw_isac.supplemental_evidence_v2_1 import (
     run_extended_ablations,
@@ -20,6 +22,23 @@ from pcfmcw_isac.supplemental_evidence_v2_1 import (
     run_same_seed_policy_check,
     run_uncertainty_sweep,
 )
+
+
+def _json_safe(value: Any) -> Any:
+    """Recursively convert non-finite floats to JSON null.
+
+    Physically infeasible actions intentionally use +/-inf internally for
+    unbounded sensing errors.  Publication artifacts must remain standards-
+    compliant JSON, so non-finite diagnostic sentinels are represented as null
+    at serialization time rather than changing the underlying simulation model.
+    """
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return value
 
 
 def parse_args() -> argparse.Namespace:
@@ -81,7 +100,7 @@ def main() -> None:
     }
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(envelope, indent=2, allow_nan=False))
+    out.write_text(json.dumps(_json_safe(envelope), indent=2, allow_nan=False))
     print(out)
 
 

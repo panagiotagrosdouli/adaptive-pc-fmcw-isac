@@ -9,6 +9,13 @@ def test_parking_profile_rejects_published_high_mobility_scale():
     assert not physically_feasible(sr, req)
 
 
+def test_parking_profile_uses_programmed_slope_for_range_boundary():
+    profiles = default_operating_profiles()
+    sr = next(p for p in profiles if p.name == "P-SR-C32")
+    assert physically_feasible(sr, PhysicalRequirement(range_m=18.0, radial_velocity_mps=0.0))
+    assert not physically_feasible(sr, PhysicalRequirement(range_m=20.0, radial_velocity_mps=0.0))
+
+
 def test_high_mobility_profile_accepts_published_high_mobility_scale():
     profiles = default_operating_profiles()
     hm = next(p for p in profiles if p.name == "P-HM-C32")

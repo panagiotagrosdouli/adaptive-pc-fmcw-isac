@@ -1,10 +1,9 @@
-"""Publication-v2.1 policy semantics after the mandatory v2 smoke gate.
+"""Publication-v2.1 policy semantics and research extensions.
 
-The v2 smoke run is preserved as immutable diagnostic evidence. It exposed that
-B1 and B3 collapsed because the v1/v2 selector-side sensing heuristic clipped
-the SNR penalty at unity, making the declared 1 m / 1 m/s sensing constraints
-non-binding for every physics-feasible action. V2.1 fixes only that selector
-model defect; QoS thresholds and receiver-level evaluation are unchanged.
+The frozen v2.1 policy is preserved by default.  Research experiments may use
+an explicit calibrated robust mode that trades statistical confidence against
+availability; this is supplemental evidence and must not be substituted into
+the frozen benchmark silently.
 
 All reported outcomes remain simulation evidence, never hardware measurements.
 """
@@ -42,18 +41,7 @@ def _action_seed(state: EvaluationState, action: PhyActionSpec) -> int:
     return int.from_bytes(digest[:8], "little") % (2**32 - 1)
 
 
-def _predict_metrics_v2_1(
-    action: PhyActionSpec,
-    state: EvaluationState,
-) -> tuple[bool, bool, bool, float]:
-    """Low-cost v2.1 selector model with SNR-sensitive sensing guards.
-
-    Communication keeps the analytical DBPSK-plus-impairment approximation used
-    in v2. The sensing guard scales the physical range/velocity resolution by
-    1/sqrt(SNR) without the v1/v2 unit floor. This restores the expected
-    low-SNR degradation and prevents sensing QoS from being tautologically true.
-    Receiver-level metrics are still produced only by evaluate_action().
-    """
+def _predict_metrics_v2_1(action: PhyActionSpec, state: EvaluationState) -> tuple[bool, bool, bool, float]:
     profiles = profile_registry()
     feasible = action in filter_physics_feasible_actions((action,), profiles, state)
     if not feasible:
@@ -82,14 +70,12 @@ def _predict_metrics_v2_1(
     return True, bool(comm_ok), bool(sensing_ok), normalized_resource_cost(action)
 
 
-def _robust_candidate(
-    action: PhyActionSpec,
-    estimated: EvaluationState,
-    true_state: EvaluationState,
-    *,
-    robust_draws: int,
-    confidence: float,
-) -> tuple[bool, float, int]:
+def _robust_candidate(action: PhyActionSpec, estimated: EvaluationState, true_state: EvaluationState, *, robust_draws: int, confidence: float, reliability_target: float | None = None) -> tuple[bool, float, int]:
+    """Evaluate one action using a finite-sample lower confidence bound.
+
+    reliability_target is explicit so supplemental experiments can trace a
+    reliability/availability frontier without changing the frozen QoS object.
+    """
     rng = np.random.default_rng(_action_seed(true_state, action))
     success = 0
     u = true_state.state_uncertainty_scale
@@ -99,48 +85,25 @@ def _robust_candidate(
             ebn0_db=estimated.ebn0_db + rng.normal(0.0, 1.5 * u),
             if_snr_db=estimated.if_snr_db + rng.normal(0.0, 1.5 * u),
             radial_velocity_mps=estimated.radial_velocity_mps + rng.normal(0.0, 1.0 * u),
-            residual_cfo_hz=max(
-                0.0,
-                estimated.residual_cfo_hz + rng.normal(0.0, 250.0 * u),
-            ),
+            residual_cfo_hz=max(0.0, estimated.residual_cfo_hz + rng.normal(0.0, 250.0 * u)),
         )
         feasible, c_ok, s_ok, _ = _predict_metrics_v2_1(action, draw)
         success += int(feasible and c_ok and s_ok)
     lower = wilson_lower_bound(success, robust_draws, confidence=confidence)
-    return lower >= FROZEN_PROTOCOL_V1.qos.joint_reliability_target, lower, success
+    target = FROZEN_PROTOCOL_V1.qos.joint_reliability_target if reliability_target is None else reliability_target
+    return lower >= target, lower, success
 
 
-def select_action_v2_1(
-    policy: str,
-    true_state: EvaluationState,
-    *,
-    robust_draws: int = 512,
-    reliability_confidence: float = 0.95,
-    oracle_comm_bits: int = 20_000,
-    oracle_sensing_trials: int = 3,
-) -> PhyActionSpec | None:
+def select_action_v2_1(policy: str, true_state: EvaluationState, *, robust_draws: int = 512, reliability_confidence: float = 0.95, reliability_target: float | None = None, oracle_comm_bits: int = 20_000, oracle_sensing_trials: int = 3) -> PhyActionSpec | None:
     actions = FROZEN_PROTOCOL_V1.actions()
     estimated = _estimated_state(true_state, true_state.state_uncertainty_scale)
     physics_actions = filter_physics_feasible_actions(actions, profile_registry(), estimated)
 
     if policy == "ORACLE":
         true_actions = filter_physics_feasible_actions(actions, profile_registry(), true_state)
-        ordered = sorted(
-            true_actions,
-            key=lambda a: (
-                normalized_resource_cost(a),
-                a.profile_name,
-                a.chips_per_chirp,
-                a.repetition_factor,
-            ),
-        )
+        ordered = sorted(true_actions, key=lambda a: (normalized_resource_cost(a), a.profile_name, a.chips_per_chirp, a.repetition_factor))
         for action in ordered:
-            metrics = evaluate_action(
-                action,
-                true_state,
-                comm_bits=oracle_comm_bits,
-                sensing_trials=oracle_sensing_trials,
-            )
+            metrics = evaluate_action(action, true_state, comm_bits=oracle_comm_bits, sensing_trials=oracle_sensing_trials)
             if metrics.joint_qos:
                 return action
         return None
@@ -148,9 +111,7 @@ def select_action_v2_1(
     if not physics_actions:
         return None
     if policy == "B0_FIXED":
-        fixed = PhyActionSpec(
-            "ti_77ghz_high_mobility_capability_profile", 32, 0.0, 2
-        )
+        fixed = PhyActionSpec("ti_77ghz_high_mobility_capability_profile", 32, 0.0, 2)
         return fixed if fixed in physics_actions else None
 
     if policy in ("B1_COMM_ONLY", "B2_SENSING_ONLY", "B3_DETERMINISTIC_JOINT"):
@@ -165,63 +126,30 @@ def select_action_v2_1(
                 candidates.append(action)
         return _cheapest(candidates) if candidates else None
 
-    if policy != "B4_ROBUST_JOINT":
+    if policy not in ("B4_ROBUST_JOINT", "B4_CALIBRATED_ROBUST"):
         raise ValueError(f"unknown policy {policy!r}")
 
     candidates = []
     for action in physics_actions:
-        accepted, _, _ = _robust_candidate(
-            action,
-            estimated,
-            true_state,
-            robust_draws=robust_draws,
-            confidence=reliability_confidence,
-        )
+        accepted, lower, _ = _robust_candidate(action, estimated, true_state, robust_draws=robust_draws, confidence=reliability_confidence, reliability_target=reliability_target)
         if accepted:
-            candidates.append(action)
-    return _cheapest(candidates) if candidates else None
+            candidates.append((action, lower))
+    if not candidates:
+        return None
+    if policy == "B4_ROBUST_JOINT":
+        return _cheapest([a for a, _ in candidates])
+    # Calibrated mode breaks equal-cost ties by the strongest certified margin.
+    return min(candidates, key=lambda item: (normalized_resource_cost(item[0]), -item[1], item[0].profile_name, item[0].chips_per_chirp, item[0].repetition_factor))[0]
 
 
-def evaluate_policy_v2_1(
-    policy: str,
-    state: EvaluationState,
-    *,
-    comm_bits: int = 20_000,
-    sensing_trials: int = 3,
-    robust_draws: int = 512,
-    reliability_confidence: float = 0.95,
-) -> dict:
-    action = select_action_v2_1(
-        policy,
-        state,
-        robust_draws=robust_draws,
-        reliability_confidence=reliability_confidence,
-        oracle_comm_bits=comm_bits,
-        oracle_sensing_trials=sensing_trials,
-    )
+def evaluate_policy_v2_1(policy: str, state: EvaluationState, *, comm_bits: int = 20_000, sensing_trials: int = 3, robust_draws: int = 512, reliability_confidence: float = 0.95, reliability_target: float | None = None) -> dict:
+    action = select_action_v2_1(policy, state, robust_draws=robust_draws, reliability_confidence=reliability_confidence, reliability_target=reliability_target, oracle_comm_bits=comm_bits, oracle_sensing_trials=sensing_trials)
     if action is None:
-        return {
-            "policy": policy,
-            "selected_action": None,
-            "physics_feasible": False,
-            "joint_qos": False,
-            "outage": True,
-            "protocol_semantics": "publication_v2_1",
-        }
-    metrics = evaluate_action(
-        action,
-        state,
-        comm_bits=comm_bits,
-        sensing_trials=sensing_trials,
-    )
+        return {"policy": policy, "selected_action": None, "physics_feasible": False, "joint_qos": False, "outage": True, "protocol_semantics": "publication_v2_1_research_extension" if reliability_target is not None or policy == "B4_CALIBRATED_ROBUST" else "publication_v2_1"}
+    metrics = evaluate_action(action, state, comm_bits=comm_bits, sensing_trials=sensing_trials)
     return {
         "policy": policy,
-        "selected_action": {
-            "profile_name": action.profile_name,
-            "chips_per_chirp": action.chips_per_chirp,
-            "tx_power_backoff_db": action.tx_power_backoff_db,
-            "repetition_factor": action.repetition_factor,
-        },
+        "selected_action": {"profile_name": action.profile_name, "chips_per_chirp": action.chips_per_chirp, "tx_power_backoff_db": action.tx_power_backoff_db, "repetition_factor": action.repetition_factor},
         "physics_feasible": metrics.physics_feasible,
         "ber": metrics.ber,
         "effective_rate_bps": metrics.effective_rate_bps,
@@ -230,5 +158,5 @@ def evaluate_policy_v2_1(
         "joint_qos": metrics.joint_qos,
         "outage": not metrics.joint_qos,
         "normalized_resource_cost": metrics.normalized_resource_cost,
-        "protocol_semantics": "publication_v2_1",
+        "protocol_semantics": "publication_v2_1_research_extension" if reliability_target is not None or policy == "B4_CALIBRATED_ROBUST" else "publication_v2_1",
     }

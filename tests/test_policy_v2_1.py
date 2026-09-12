@@ -43,7 +43,21 @@ def test_comm_only_and_joint_no_longer_collapse_when_sensing_is_limiting():
 
 def test_oracle_remains_receiver_valid_on_easy_state():
     state = _state(if_snr_db=10.0)
-    oracle = select_action_v2_1(
-        "ORACLE", state, robust_draws=64, oracle_comm_bits=2000, oracle_sensing_trials=1
-    )
+    oracle = select_action_v2_1("ORACLE", state, robust_draws=64, oracle_comm_bits=2000, oracle_sensing_trials=1)
     assert oracle is not None
+
+
+def test_calibrated_robust_acceptance_is_monotone_in_reliability_target():
+    state = _state(if_snr_db=10.0, state_uncertainty_scale=0.5)
+    loose = select_action_v2_1("B4_CALIBRATED_ROBUST", state, robust_draws=128, reliability_target=0.80)
+    strict = select_action_v2_1("B4_CALIBRATED_ROBUST", state, robust_draws=128, reliability_target=0.99)
+    # A stricter certificate may keep the same action or abstain; it must not
+    # create feasibility when the looser target had none.
+    assert loose is not None or strict is None
+
+
+def test_frozen_b4_semantics_remain_default_when_no_override_is_given():
+    state = _state(if_snr_db=10.0, state_uncertainty_scale=0.25)
+    legacy = select_action_v2_1("B4_ROBUST_JOINT", state, robust_draws=128)
+    explicit = select_action_v2_1("B4_ROBUST_JOINT", state, robust_draws=128, reliability_target=None)
+    assert legacy == explicit

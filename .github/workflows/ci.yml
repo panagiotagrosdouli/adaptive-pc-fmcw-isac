@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,6 +25,8 @@ jobs:
         run: python scripts/run_e1_e5_validation.py --output artifacts/ci/e1_e5_smoke.json
       - name: E6-E12 paired policy benchmark smoke test
         run: python scripts/run_e6_e12_benchmark.py --n-seeds 2 --comm-bits 2000 --sensing-trials 1 --output artifacts/ci/e6_e12_smoke.json
+      - name: Full supplemental research surface smoke test
+        run: python scripts/run_supplemental_v2_1.py --experiment all-smoke --seed-start 10000 --n-seeds 1 --comm-bits 500 --sensing-trials 1 --robust-draws 16 --reference-draws 32 --truth-draws 1 --bootstrap-resamples 100 --output artifacts/ci/supplemental_smoke.json
       - name: Upload simulation smoke artifacts
         uses: actions/upload-artifact@v4
         with:

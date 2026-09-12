@@ -2,8 +2,11 @@ from pcfmcw_isac.if_model import RadarProfile
 from pcfmcw_isac.publication_protocol import (
     FROZEN_PROTOCOL_V1,
     EvaluationState,
+    PhyActionSpec,
+    action_physics_feasibility,
     filter_physics_feasible_actions,
     is_physics_feasible,
+    physics_feasibility,
 )
 
 
@@ -23,7 +26,6 @@ def make_state(range_m: float, velocity_mps: float) -> EvaluationState:
 
 def test_frozen_protocol_is_valid_and_has_expected_action_count():
     FROZEN_PROTOCOL_V1.validate()
-    # 2 profiles x 3 chip budgets x 3 power levels x 3 repetition factors.
     assert len(FROZEN_PROTOCOL_V1.actions()) == 54
 
 
@@ -35,17 +37,49 @@ def test_final_seed_family_is_disjoint_from_pilot_style_small_seeds():
     assert not set(range(10)).intersection(seeds)
 
 
-def test_parking_profile_rejects_high_velocity():
+def test_parking_profile_rejects_high_velocity_with_reason():
     parking = RadarProfile()
     state = make_state(range_m=10.0, velocity_mps=20.0)
+    result = physics_feasibility(parking, state)
     assert parking.max_unambiguous_velocity_mps < 20.0
+    assert not result.feasible
+    assert result.reasons == ("VELOCITY_AMBIGUOUS",)
     assert not is_physics_feasible(parking, state)
 
 
 def test_parking_profile_accepts_short_range_low_velocity():
     parking = RadarProfile()
     state = make_state(range_m=10.0, velocity_mps=3.0)
-    assert is_physics_feasible(parking, state)
+    result = physics_feasibility(parking, state)
+    assert result.feasible
+    assert result.reasons == ()
+
+
+def test_physics_gate_reports_multiple_independent_failures():
+    parking = RadarProfile()
+    state = make_state(
+        range_m=parking.positive_if_max_range_m + 1.0,
+        velocity_mps=parking.max_unambiguous_velocity_mps + 1.0,
+    )
+    result = physics_feasibility(parking, state)
+    assert not result.feasible
+    assert set(result.reasons) == {"RANGE_UNSUPPORTED", "VELOCITY_AMBIGUOUS"}
+
+
+def test_physics_gate_is_inclusive_at_exact_support_boundaries():
+    parking = RadarProfile()
+    state = make_state(
+        range_m=parking.positive_if_max_range_m,
+        velocity_mps=parking.max_unambiguous_velocity_mps,
+    )
+    assert physics_feasibility(parking, state).feasible
+
+
+def test_action_gate_reports_missing_profile_without_exception():
+    action = PhyActionSpec("missing_profile", 32, 0.0, 1)
+    result = action_physics_feasibility(action, {}, make_state(10.0, 0.0))
+    assert not result.feasible
+    assert result.reasons == ("PROFILE_MISSING",)
 
 
 def test_physics_gate_filters_actions_by_profile_support():
@@ -66,6 +100,4 @@ def test_physics_gate_filters_actions_by_profile_support():
     state = make_state(range_m=20.0, velocity_mps=20.0)
     feasible = filter_physics_feasible_actions(FROZEN_PROTOCOL_V1.actions(), profiles, state)
     assert feasible
-    assert {a.profile_name for a in feasible} == {
-        "ti_77ghz_high_mobility_capability_profile"
-    }
+    assert {a.profile_name for a in feasible} == {"ti_77ghz_high_mobility_capability_profile"}

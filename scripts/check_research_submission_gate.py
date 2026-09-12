@@ -11,7 +11,8 @@ from typing import Any
 REQUIRED = (
     "uncertainty", "stress", "physics", "pareto", "ablations", "mismatch",
     "distribution-shift", "runtime", "full-metrics", "reliability-targets",
-    "confidence-maps", "uncertainty-sources", "reliability-calibration", "action-space",
+    "qos-sensitivity", "confidence-maps", "uncertainty-sources",
+    "reliability-calibration", "action-space",
 )
 EXPECTED_EVIDENCE_CLASS = "SUPPLEMENTAL_PUBLICATION_V2_1_SIMULATION_NOT_HARDWARE_MEASUREMENT"
 
@@ -60,17 +61,35 @@ def validate_artifact(name: str, payload: dict) -> list[str]:
         summary=results.get("summary",{})
         for variant in ("FULL","HIGH_MOBILITY_PROFILE_ONLY","PARKING_PROFILE_ONLY","NO_REPETITION","FIXED_32_CHIPS","NO_POWER_BACKOFF"):
             _require(variant in summary,f"{name}: missing variant {variant}",errors)
+    elif name=="qos-sensitivity":
+        summary=results.get("summary",{})
+        for variant in ("BASELINE","STRICT_COMM","RELAXED_COMM","STRICT_SENSING","RELAXED_SENSING","STRICT_JOINT","RELAXED_JOINT"):
+            _require(variant in summary,f"{name}: missing variant {variant}",errors)
+            if variant in summary:
+                for policy in ("B3_DETERMINISTIC_JOINT","B4_ROBUST_JOINT"):
+                    _require(policy in summary[variant],f"{name}: missing {policy} in {variant}",errors)
+        _require("method_boundary" in results,f"{name}: missing method boundary",errors)
     elif name=="physics":
-        _require(bool(results.get("cells",[])),f"{name}: empty physical map",errors)
+        cells=results.get("cells",[]); _require(bool(cells),f"{name}: empty physical map",errors)
         _require("derived_profile_limits" in results,f"{name}: missing derived profile limits",errors)
+        for i,cell in enumerate(cells):
+            _require("profile_feasibility" in cell,f"{name}: cell {i} missing machine-readable reasons",errors)
+            for profile,detail in cell.get("profile_feasibility",{}).items():
+                _require("feasible" in detail and "reasons" in detail,f"{name}: malformed reason record for {profile}",errors)
+                _require("MAP_CONSISTENCY_ERROR" not in detail.get("reasons",[]),f"{name}: map consistency error for {profile}",errors)
     elif name in ("mismatch","distribution-shift"):
         summary=results.get("summary",{}); _require(bool(summary),f"{name}: empty mismatch summary",errors)
         if name=="distribution-shift":
+            paired=results.get("paired_statistics",{}); _require(bool(paired),f"{name}: missing paired statistics",errors)
+            _require(bool(results.get("failure_taxonomy")),f"{name}: missing failure taxonomy",errors)
             for family in ("NOMINAL_GAUSSIAN","HEAVY_TAILED_T3","CORRELATED_SNR_INTERFERENCE","BIASED_STATE_ESTIMATE"):
                 _require(family in summary,f"{name}: missing family {family}",errors)
+                _require(family in paired,f"{name}: missing paired statistics for {family}",errors)
                 if family in summary:
                     for policy in ("B3_DETERMINISTIC_JOINT","B4_ROBUST_JOINT"):
                         _require(policy in summary[family],f"{name}: missing {policy} in {family}",errors)
+                if family in paired:
+                    _require(paired[family].get("paired_units",0)>0,f"{name}: zero paired units in {family}",errors)
     elif name=="runtime":
         summary=results.get("summary",{}); _require(bool(summary),f"{name}: empty runtime summary",errors)
         for draws,policies in summary.items():

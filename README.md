@@ -4,220 +4,150 @@ A reproducible, dataset-free research framework for **high-mobility vehicular ph
 
 ![Project overview](docs/project_overview.jpg)
 
-> **Research question:** Which PC-FMCW PHY configuration is physically feasible, and which feasible configuration should be selected when communication reliability and radar sensing quality must be maintained simultaneously under mobility and imperfect PHY knowledge?
+> **Research question:** Which PC-FMCW PHY configurations are physically admissible, and on what subset of operating states can a finite-action adaptive policy support joint communication and sensing QoS with a declared reliability under imperfect PHY knowledge?
 
-The central idea is **physics-gated robust adaptation**. A candidate waveform/profile is first rejected if its FMCW sampling, range or unambiguous-velocity limits cannot support the operating state. The remaining configurations are then evaluated under joint communication and sensing QoS constraints with uncertainty in SNR, Doppler, interference and synchronization.
+The central idea is **physics-gated robust adaptation**. A candidate waveform/profile is first rejected when its modeled FMCW range or unambiguous-velocity support cannot represent the requested operating state. The remaining configurations are evaluated under joint communication and sensing QoS constraints with uncertainty in link quality, Doppler/synchronization, interference, and state estimation.
 
 ## Scientific positioning
 
-This work builds on the established PC-FMCW ISAC concept but addresses a different research layer. Prior PC-FMCW laser-headlamp ISCAI work demonstrated that phase-coded FMCW can integrate communication, sensing and illumination, including DPSK communication, range-Doppler sensing, ADB illumination and target tracking.
+PC-FMCW sensing/communication is established prior art. This repository does **not** claim invention of phase coding, DPSK embedding, generic ISAC, chance constraints, range--Doppler processing, MIMO PC-FMCW, or receiver filtering. Its narrower contribution is the composition of:
 
-**This repository does not claim those concepts as new.** Its contribution is to move from fixed-configuration functional feasibility to **reliable adaptive operation under high-mobility PHY uncertainty**.
+- deterministic PC-FMCW physical-capability gating;
+- finite-action PHY adaptation under declared uncertainty;
+- explicit policy abstention;
+- paired receiver-level evaluation with confidence-qualified reliability statements; and
+- feasible-operating-region / reliability--availability--complexity characterization.
 
-The project studies an **RF/mmWave 77-GHz vehicular PC-FMCW ISAC PHY**, not an optical laser-headlamp/ADB system. It deliberately excludes trajectory forecasting, ego-motion planning, packet/user scheduling, beam management, ADB illumination and Hough tracking as proposed contributions.
+The project studies an **RF/mmWave 77-GHz PC-FMCW PHY**. It does not perform trajectory forecasting, packet scheduling, beam management, adaptive-driving-beam control, or ego-motion planning.
 
-The intended one-sentence contribution is:
+The strongest supported interpretation is:
 
-> **We extend PC-FMCW ISAC from fixed-configuration functional feasibility to physics-gated, reliability-constrained PHY adaptation under high-mobility uncertainty, and characterize the operating region in which vehicular communication and sensing QoS can be jointly guaranteed.**
+> Under the declared simulation uncertainty model, the robust policy selects a smaller operating subset than deterministic adaptation, but its selected subset exhibits higher confidence-qualified conditional joint sensing/communication reliability. This is a reliability--availability--complexity trade-off, not universal policy dominance.
 
-See [`docs/CONTRIBUTION_POSITIONING.md`](docs/CONTRIBUTION_POSITIONING.md) for the detailed novelty boundary, hypotheses, baselines and claim hierarchy.
+## Literature-grounded profiles
 
-## Working paper title
+### Short-range TI parking-style profile
 
-**Physics-Gated Reliability-Constrained Adaptive Phase-Coded FMCW ISAC for High-Mobility Vehicular Links**
+The source-grounded short-range profile follows Texas Instruments reference design **TIDEP-01011** / design guide **TIDUEO9** and uses:
 
-## Proposed contributions
+- carrier: 77 GHz;
+- valid sweep bandwidth: 858 MHz;
+- programmed chirp slope: 40 MHz/us;
+- ADC/chirp capture interval: 25.6 us;
+- chirp repetition interval: 115.8 us;
+- IF ADC: 10 MSPS;
+- 256 samples/chirp and 64 chirps/frame.
 
-1. **Physics-gated PC-FMCW adaptation** — reject configurations that violate FMCW sampling, range or unambiguous-velocity limits before optimization.
-2. **Joint reliability under imperfect PHY knowledge** — communication and sensing chance/reliability constraints under SNR, Doppler, interference, synchronization and state-estimation uncertainty.
-3. **Feasible operating-region characterization** — determine where joint sensing/communication QoS is achievable and where no candidate configuration can satisfy it.
-4. **Communication–sensing–resource Pareto analysis** — quantify the cost required to remain reliable rather than reporting only average gains.
-5. **Reproducible high-mobility evaluation** — explicitly separate one-way vehicular communications from the monostatic two-way sensing echo and preserve provenance for every parameter/result class.
+The valid sweep bandwidth and programmed chirp slope are separate source quantities. The implementation therefore uses **858 MHz** for range resolution and **40 MHz/us** for beat-frequency/range-support calculations; it does not infer the slope as `858 MHz / 25.6 us`.
 
-## System model
-
-```text
-                    physical operating state
-        SNR / range / velocity / Doppler / interference
-                 / synchronization uncertainty
-                              |
-                              v
-                +---------------------------+
-                |   PHY state estimation    |
-                +-------------+-------------+
-                              |
-                              v
-                +---------------------------+
-                |   Physics feasibility     |
-                |          gate             |
-                +-------------+-------------+
-                              |
-                    feasible profiles only
-                              |
-                              v
-                +---------------------------+
-                | Reliability-constrained   |
-                |     PHY adaptation        |
-                +-------------+-------------+
-                              |
-                  PC-FMCW configuration
-                              |
-                +-------------+-------------+
-                |                           |
-                v                           v
-       communication receiver       radar sensing receiver
-        DBPSK / BER / rate          dechirp / range-Doppler
-```
-
-A configuration can include waveform/profile choice, transmit power, phase-code/chip budget and repetition/coding resources. The action space is finite and reproducible so that all baselines are evaluated on the same candidate set.
-
-## Literature-grounded 77-GHz profiles
-
-### Short-range profile
-
-The parking-oriented reference uses 77 GHz carrier, 858 MHz valid sweep, 25.6 us active chirp, 115.8 us chirp repetition interval, 10 MSPS IF ADC, 256 samples/chirp and 64 chirps/frame.
-
-Its current analytical scales are approximately:
+Derived analytical scales are approximately:
 
 - range resolution: **0.175 m**;
-- positive-IF range support: **22.36 m**;
+- positive-IF range support: **18.74 m**;
 - radial-velocity resolution: **0.263 m/s**;
 - maximum unambiguous radial velocity: **8.41 m/s**.
 
-This is an important physical example: excellent range resolution does **not** imply suitability for high relative velocity.
-
 ### High-mobility capability profile
 
-The high-mobility capability reference uses 77 GHz, 1 GHz sweep, 20 us active chirp/repetition, 37.5 MSPS ADC capability, 750 samples/chirp and 128 chirps/frame.
+A separate **composite capability reference** uses 77 GHz, 1 GHz sweep bandwidth, 20 us ramp/repetition, 37.5 MSPS sampling, 750 samples/chirp, and 128 chirps/frame. It is not represented as a commercial preset.
 
-Its current analytical scales are approximately:
+Its analytical scales are approximately:
 
 - range resolution: **0.150 m**;
 - positive-IF range support: **56.21 m**;
 - radial-velocity resolution: **0.760 m/s**;
 - maximum unambiguous radial velocity: **48.67 m/s**.
 
-This is a **composite capability reference**, not a claim that a commercial radar ships with this exact preset. Parameter provenance and claim boundaries are documented in `docs/LITERATURE_GROUNDED_PARAMETERS.md`.
+Parameter provenance is documented in [`docs/LITERATURE_GROUNDED_PARAMETERS.md`](docs/LITERATURE_GROUNDED_PARAMETERS.md).
 
-## Correct FMCW signal path
+## Signal-path model
 
-The radar ADC samples the **dechirped IF/beat signal**, not the 77-GHz carrier or the full RF sweep directly. The sensing simulator therefore uses an IF-domain FMCW model with explicit fast-time range and slow-time Doppler structure.
+The radar ADC samples the **dechirped IF/beat signal**, not the 77-GHz carrier. The sensing path uses monostatic two-way delay and Doppler, while the communication path is a separate one-way link. The communication receiver removes the known chirp and decodes a transparent multi-chip DBPSK reference signal.
 
-The communication path is a separate one-way vehicular link. The receiver removes the known chirp component and recovers embedded phase-coded data. This prevents the one-way communications link budget from being conflated with the monostatic two-way radar echo.
+The DBPSK implementation is checked against the analytical noncoherent AWGN expression `P_b = 0.5 exp(-Eb/N0)`. Residual synchronization/frequency error, interference, state uncertainty, and sensing IF-SNR are controlled experimental variables. No RF measurements are produced by this repository.
 
-## Communication validation
+## Policies
 
-The current reference modem uses multi-chip DBPSK after chirp removal. With 32 chips/chirp in the short-range profile, the raw reference rate is approximately **276.3 kb/s**.
+- **B0 — Fixed PHY**
+- **B1 — Communication-only adaptation**
+- **B2 — Sensing-only adaptation**
+- **B3 — Deterministic joint adaptation**
+- **B4 — Robust joint adaptation**
+- **Oracle — hindsight true-state reference; non-deployable**
 
-The implementation is checked against the analytical noncoherent DBPSK AWGN result. The committed diagnostic Monte-Carlo artifact includes:
+The finite action space spans profile choice, 16/32/64 phase-code chips per chirp, 0/3/6 dB transmit-power backoff, and repetition factors 1/2/4.
 
-| Eb/N0 | simulated BER | analytical BER |
-|---:|---:|---:|
-| 0 dB | 1.836e-1 | 1.839e-1 |
-| 4 dB | 4.106e-2 | 4.056e-2 |
-| 8 dB | 9.20e-4 | 9.09e-4 |
-| 10 dB | 2.00e-5 | 2.27e-5 |
+## Frozen primary evidence
 
-Residual frequency error is treated explicitly as a high-mobility impairment. At 8 dB Eb/N0, the diagnostic uncompensated BER rises from roughly **9e-4 at 0 Hz residual error** to roughly **3.2e-2 around 5.1 kHz**. These are simulation outputs, not measured RF results.
+The publication-v2.1 frozen paired benchmark uses **1000 final seeds**, **12,000 paired operating-state/seed units per policy**, and **72,000 receiver-level evaluations** across six policies.
 
-See `artifacts/stage7/pilot_validation.json`.
+Key frozen results:
 
-## Proposed controller and baselines
+- B4 selection rate: **12.23%**;
+- B4 selected successes: **1468/1468**;
+- one-sided 95% Wilson lower bound for B4 conditional joint QoS: **99.816%**;
+- B4 abstention: **87.77%**;
+- B4--B3 unconditional joint-QoS difference: **-0.03942**, 95% paired-bootstrap CI **[-0.04292, -0.03600]**.
 
-- **B0 — Fixed PHY:** one frozen configuration for every operating state.
-- **B1 — Communication-only adaptive:** minimizes resource cost subject to communication QoS.
-- **B2 — Sensing-only adaptive:** minimizes resource cost subject to sensing QoS.
-- **B3 — Deterministic joint ISAC:** satisfies both QoS constraints while treating the estimated state as exact.
-- **B4 — Robust joint ISAC (proposed):** physics gate + uncertainty-aware joint reliability constraints.
-- **Oracle:** true instantaneous state; non-deployable evaluation bound only.
+Thus the frozen evidence rejects unconditional B4 superiority. The robust policy is more conservative and exchanges availability for conditional reliability.
 
-A representative formulation is
+## Reviewer-grade supplemental evidence
 
-```text
-minimize_a     C_resource(a)
+The completed supplemental suite evaluates uncertainty sweeps, impairment stress, physical-feasibility maps, ablations, mismatch, distribution shift, runtime, full metrics, reliability targets, QoS sensitivity, confidence maps, uncertainty-source ablation, finite-draw calibration, and action-space sensitivity.
 
-subject to     a in A_physics(state)
-               P[BER(a,S) <= epsilon_comm] >= 1 - alpha
-               P[RMSE_range(a,S) <= delta_r] >= 1 - beta_r
-               P[RMSE_velocity(a,S) <= delta_v] >= 1 - beta_v
-               P[joint QoS(a,S)] >= 1 - eta
-               R_eff(a,S) >= R_min, when required.
-```
+The historical completed reviewer-grade run `34696063382` is preserved as a distinct evidence instance. A later source-model correction separated the TI programmed slope from valid sweep bandwidth; any post-correction supplemental run must therefore be reported with its own run ID, commit, statistics, and artifact digest rather than silently replacing historical evidence.
 
-## Main evaluation outputs
+The historical full-metric bank showed B4 selecting 12.5% of 1,200 paired states with 100% observed conditional joint QoS and a 98.23% one-sided Wilson lower bound, while B3 selected 20.0% with 80.83% conditional joint QoS. B4 remained worse in unconditional joint QoS by -0.03667 (95% paired-bootstrap CI [-0.04833, -0.02583]).
 
-- BER / PER / effective rate / outage;
-- range and radial-velocity RMSE;
-- probability of joint QoS satisfaction;
-- reliability-constraint violation rate;
-- selected PHY resource cost;
-- profile-selection frequency;
-- infeasible-state probability;
-- SNR x velocity and interference x synchronization-error feasibility maps;
-- sensing-communication-resource Pareto frontiers;
-- robustness to state-estimation error and model mismatch;
-- runtime / decision complexity.
+## Runtime boundary
 
-## Experimental protocol
+Historical host-runtime measurements for the unoptimized Python implementation were approximately 36.29, 70.47, 138.89, and 272.81 ms median B4 decision time at 64, 128, 256, and 512 uncertainty draws. At 256 draws, p95 was 279.71 ms.
 
-The planned frozen study contains twelve blocks:
+These are **GitHub Actions host timings**, not embedded-target measurements. No hard-real-time or deployment-latency claim is made.
 
-- **E1:** analytical and waveform/receiver sanity checks;
-- **E2:** communication BER validation;
-- **E3:** FMCW range/velocity validation;
-- **E4:** high-mobility Doppler and synchronization stress;
-- **E5:** interference and phase-noise stress;
-- **E6:** B0-B4 + Oracle comparison;
-- **E7:** imperfect-state / uncertainty sweep;
-- **E8:** reliability-target sweep;
-- **E9:** physical feasibility-region mapping;
-- **E10:** communication-sensing-resource Pareto analysis;
-- **E11:** ablations and model mismatch;
-- **E12:** large-seed paired statistics, runtime and frozen reproduction bundle.
+## Metrics and claim boundaries
 
-Final comparisons use fixed independent seeds, paired evaluation where appropriate, bootstrap confidence intervals and predeclared configurations. Pilot runs are diagnostic and are not silently promoted to publication results.
+The project reports BER, effective rate, range/velocity error, joint QoS, selection/abstention, physical infeasibility, confidence intervals/bounds, resource coordinates, and runtime. **Packet-level PER is not independently estimated because no packet model is declared.** The experiment-defined normalized resource cost is dimensionless and must not be interpreted as physical energy.
 
-## Repository layout
+Unsupported claims include:
 
-```text
-configs/                 frozen and literature-grounded experiment configurations
-docs/                    system model, contribution positioning, provenance and protocol
-src/pcfmcw_isac/         waveform, channel, link-budget, sensing and policy code
-scripts/                 reproducible validation and experiment entry points
-tests/                   physical invariants and regression tests
-artifacts/                machine-readable diagnostic and final results
-```
+- universal or unconditional B4 superiority;
+- RF/hardware validation by this project;
+- arbitrary-mismatch or arbitrary-distribution robustness;
+- global Pareto optimality outside realized selected points;
+- real-time embedded readiness;
+- physical-energy interpretation of normalized cost; and
+- packet-level PER without a packet model.
 
-## Quick start
+See [`docs/research/CLAIM_AUDIT.md`](docs/research/CLAIM_AUDIT.md) and [`docs/research/REFERENCE_VERIFICATION.md`](docs/research/REFERENCE_VERIFICATION.md).
+
+## Reproducibility
 
 ```bash
 python -m pip install -e .[dev]
 pytest -q
 
-python scripts/run_experiment.py \
-  --config configs/baseline.json \
-  --output artifacts/baseline.json
-
 python scripts/run_stage7_validation.py \
   --output artifacts/stage7/literature_validation.json
+
+python scripts/run_e6_e12_benchmark.py \
+  --output artifacts/publication/smoke.json
 ```
 
-## Scientific claim boundaries
+The GitHub Actions workflows run general CI, LaTeX compilation/audit, frozen publication jobs, and reviewer-grade supplemental evidence. Machine-readable artifacts carry run/commit provenance and are treated as immutable evidence instances.
 
-This repository currently supports a **model-based Monte-Carlo study**, not a new RF hardware measurement campaign.
+## Repository layout
 
-Every reported quantity should be classified as one of:
+```text
+configs/                 literature-grounded and frozen experiment configurations
+docs/                    system model, positioning, provenance, audits, reproducibility
+src/pcfmcw_isac/         waveform, receiver, physics gate, policies, statistics
+scripts/                 validation, experiment, evidence, and packaging entry points
+tests/                   physical invariants and regression tests
+artifacts/                committed diagnostic/frozen machine-readable results
+paper/                    manuscript source, tables, discussion, bibliography
+```
 
-1. **source-derived parameter**;
-2. **analytically derived quantity**;
-3. **controlled simulation variable**;
-4. **simulation output**;
-5. **external measured value**.
+## Publication status
 
-No simulation output is described as a measured automotive-link result. No measurement from another waveform/platform is presented as experimental validation of PC-FMCW.
-
-## Publication gate
-
-The work is paper-ready only after waveform/receiver and physical-feasibility validation, frozen parameter/QoS ranges, common-support B0-B4 evaluation, large independent Monte-Carlo runs, paired confidence intervals/statistical tests, uncertainty/interference/synchronization ablations, feasibility and Pareto maps, runtime measurement and an immutable tagged reproduction bundle.
-
-Until then, committed pilot results remain **diagnostic simulation evidence**, not final paper claims.
+The computational work is **submission-ready only with its declared claim boundaries and current audited model provenance**. Final submission artifacts must match a commit whose CI, corrected evidence runs, and manuscript LaTeX audit all pass. Any rerun is a new evidence instance and must not silently overwrite prior run IDs, statistics, or digests.

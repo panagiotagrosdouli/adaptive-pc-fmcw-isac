@@ -6,9 +6,11 @@ analytically forms the sampled beat signal from range and Doppler.
 
 For real chirp profiles, *valid sweep bandwidth* and programmed chirp slope are
 not necessarily related by ``B / T_adc``: the ADC capture window can cover only
-part of a ramp.  ``RadarProfile`` therefore stores an optional explicit slope.
+part of a ramp. ``RadarProfile`` therefore stores an optional explicit slope.
 Range resolution continues to use the declared valid sweep bandwidth, whereas
-beat-frequency/range-support calculations use the actual chirp slope.
+beat-frequency/range-support calculations use the actual chirp slope. Generic
+profiles derive slope as ``B / T`` unless an explicit source-defined slope is
+provided by the named profile constructor.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -26,7 +28,7 @@ class RadarProfile:
     sample_rate_hz: float = 10e6
     samples_per_chirp: int = 256
     n_chirps: int = 64
-    explicit_slope_hz_per_s: float | None = 40e12
+    explicit_slope_hz_per_s: float | None = None
 
     def validate(self) -> None:
         if min(self.carrier_hz, self.bandwidth_hz, self.chirp_duration_s,

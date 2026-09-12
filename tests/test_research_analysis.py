@@ -1,8 +1,10 @@
 from pcfmcw_isac.research_analysis import (
     distribution_shift_statistics,
+    enrich_pareto,
     enrich_physics_map,
     failure_taxonomy,
     paired_bootstrap_binary_difference,
+    pareto_partition,
 )
 
 
@@ -91,3 +93,35 @@ def test_physics_map_enrichment_reports_range_and_velocity_rejections():
     assert failed["reasons"] == ["RANGE_UNSUPPORTED", "VELOCITY_AMBIGUOUS"]
     assert not failed["feasible"]
     assert passed == {"feasible": True, "reasons": []}
+
+
+def _pareto_point(name, qos, rate, tx, rep, adc, rr, vr):
+    return {
+        "name": name,
+        "joint_qos_probability": qos,
+        "mean_effective_rate_bps": rate,
+        "tx_power_fraction": tx,
+        "repetition_factor": rep,
+        "profile_adc_samples_per_frame": adc,
+        "mean_range_rmse_m": rr,
+        "mean_velocity_rmse_mps": vr,
+    }
+
+
+def test_pareto_partition_marks_strictly_worse_point_dominated():
+    strong = _pareto_point("strong", 1.0, 2e5, 0.5, 1, 1000, 0.2, 0.2)
+    weak = _pareto_point("weak", 0.8, 1e5, 1.0, 2, 2000, 0.5, 0.5)
+    tradeoff = _pareto_point("tradeoff", 1.0, 3e5, 0.8, 1, 1000, 0.2, 0.2)
+    out = pareto_partition([strong, weak, tradeoff])
+    assert out["n_points"] == 3
+    assert out["n_dominated"] == 1
+    assert out["dominated_points"][0]["name"] == "weak"
+    assert {p["name"] for p in out["non_dominated_points"]} == {"strong", "tradeoff"}
+
+
+def test_enrich_pareto_declares_empirical_claim_boundary():
+    point = _pareto_point("only", 1.0, 2e5, 0.5, 1, 1000, 0.2, 0.2)
+    out = enrich_pareto({"physical_points": [point]})
+    assert out["pareto"]["n_non_dominated"] == 1
+    assert out["pareto"]["n_dominated"] == 0
+    assert "realized B4-selected" in out["claim_boundary"]

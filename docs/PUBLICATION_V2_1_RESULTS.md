@@ -1,6 +1,6 @@
-# Frozen Publication V2.1 Results
+# Frozen Publication V2.1 Results — Historical Evidence Instance
 
-This document records the immutable simulation evidence from GitHub Actions run `33967030983` at commit `1b2100c11b6d4a7b6213777fd2da85e22601154b`.
+> **Status note (2026-09-12):** This document records the immutable **pre-correction** frozen evidence from GitHub Actions run `33967030983` at commit `1b2100c11b6d4a7b6213777fd2da85e22601154b`. A later source audit corrected the Texas Instruments short-range chirp-slope semantics (858 MHz valid sweep bandwidth versus independently specified 40 MHz/us programmed slope). A corrected 1000-seed frozen run is therefore required before final submission. The numbers below remain valid provenance for this historical run and must not be silently relabeled as corrected-model results.
 
 Evidence class: **simulation candidate, not hardware measurement**.
 
@@ -58,11 +58,11 @@ The normalized resource cost is an experiment-defined dimensionless design metri
 
 ## Claim boundary
 
-The publication claim supported by the frozen evidence is:
+The publication claim supported by **this historical frozen evidence instance** is:
 
 > Robust PC-FMCW adaptation identifies a conservative operating region in which selected transmissions achieve very high conditional joint sensing-communication reliability under the declared uncertainty model, at the cost of substantially reduced availability. State uncertainty contracts this operating region.
 
-The frozen evidence does **not** support a claim that B4 universally outperforms fixed or deterministic policies in unconditional joint QoS.
+The historical frozen evidence does **not** support a claim that B4 universally outperforms fixed or deterministic policies in unconditional joint QoS. Final submission wording must use the corrected-model rerun if any statistic differs.
 
 ## Provenance
 

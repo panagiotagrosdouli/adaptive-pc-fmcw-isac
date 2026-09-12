@@ -7,7 +7,12 @@ from .comm_reference import CommConfig
 
 
 def short_range_profile() -> RadarProfile:
-    """TI automated-parking-style literature-grounded chirp profile (P-SR)."""
+    """TI automated-parking-style literature-grounded chirp profile (P-SR).
+
+    TI reports the valid sweep bandwidth (858 MHz) and programmed chirp slope
+    (40 MHz/us) as separate quantities. The ADC-valid interval is therefore not
+    treated as though ``slope = valid_bandwidth / ADC_capture_time``.
+    """
     return RadarProfile(
         carrier_hz=77e9,
         bandwidth_hz=858e6,
@@ -16,6 +21,7 @@ def short_range_profile() -> RadarProfile:
         sample_rate_hz=10e6,
         samples_per_chirp=256,
         n_chirps=64,
+        explicit_slope_hz_per_s=40e12,
     )
 
 
@@ -29,6 +35,7 @@ def high_mobility_profile() -> RadarProfile:
         sample_rate_hz=37.5e6,
         samples_per_chirp=750,
         n_chirps=128,
+        explicit_slope_hz_per_s=None,
     )
 
 
@@ -50,7 +57,7 @@ def default_operating_profiles() -> list[OperatingProfile]:
     """Finite profile set used for profile-selection experiments.
 
     Costs are declared normalized experiment costs rather than monetary/hardware
-    measurements.  They are intentionally separated from source-derived constants.
+    measurements. They are intentionally separated from source-derived constants.
     """
     sr = short_range_profile()
     hm = high_mobility_profile()

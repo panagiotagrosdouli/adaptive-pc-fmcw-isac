@@ -24,17 +24,55 @@ from .supplemental_evidence_v2_1 import (
 )
 
 
-def _restricted_select(state, *, robust_draws:int, allowed_profiles:set[str]|None=None, allowed_chips:set[int]|None=None, allowed_repetitions:set[int]|None=None, allowed_backoff_db:set[float]|None=None)->PhyActionSpec|None:
-    estimated=_estimated_state(state,state.state_uncertainty_scale); table=_robust_success_table(state,estimated,robust_draws=robust_draws); target=FROZEN_PROTOCOL_V1.qos.joint_reliability_target; accepted=[]
-    for action,(lower,_) in table.items():
-        if lower<target: continue
-        if allowed_profiles is not None and action.profile_name not in allowed_profiles: continue
-        if allowed_chips is not None and action.chips_per_chirp not in allowed_chips: continue
-        if allowed_repetitions is not None and action.repetition_factor not in allowed_repetitions: continue
-        if allowed_backoff_db is not None and action.tx_power_backoff_db not in allowed_backoff_db: continue
+def _select_restricted_from_table(
+    table: dict,
+    *,
+    target: float | None = None,
+    allowed_profiles: set[str] | None = None,
+    allowed_chips: set[int] | None = None,
+    allowed_repetitions: set[int] | None = None,
+    allowed_backoff_db: set[float] | None = None,
+) -> PhyActionSpec | None:
+    """Filter one precomputed robust table without changing its Monte Carlo evidence."""
+    threshold = FROZEN_PROTOCOL_V1.qos.joint_reliability_target if target is None else float(target)
+    accepted = []
+    for action, (lower, _) in table.items():
+        if lower < threshold:
+            continue
+        if allowed_profiles is not None and action.profile_name not in allowed_profiles:
+            continue
+        if allowed_chips is not None and action.chips_per_chirp not in allowed_chips:
+            continue
+        if allowed_repetitions is not None and action.repetition_factor not in allowed_repetitions:
+            continue
+        if allowed_backoff_db is not None and action.tx_power_backoff_db not in allowed_backoff_db:
+            continue
         accepted.append(action)
-    if not accepted: return None
-    return min(accepted,key=lambda a:(normalized_resource_cost(a),a.profile_name,a.chips_per_chirp,a.repetition_factor,a.tx_power_backoff_db))
+    if not accepted:
+        return None
+    return min(
+        accepted,
+        key=lambda a: (
+            normalized_resource_cost(a),
+            a.profile_name,
+            a.chips_per_chirp,
+            a.repetition_factor,
+            a.tx_power_backoff_db,
+        ),
+    )
+
+
+def _restricted_select(state, *, robust_draws:int, allowed_profiles:set[str]|None=None, allowed_chips:set[int]|None=None, allowed_repetitions:set[int]|None=None, allowed_backoff_db:set[float]|None=None)->PhyActionSpec|None:
+    """Compatibility helper for one restricted selection from a freshly computed table."""
+    estimated=_estimated_state(state,state.state_uncertainty_scale)
+    table=_robust_success_table(state,estimated,robust_draws=robust_draws)
+    return _select_restricted_from_table(
+        table,
+        allowed_profiles=allowed_profiles,
+        allowed_chips=allowed_chips,
+        allowed_repetitions=allowed_repetitions,
+        allowed_backoff_db=allowed_backoff_db,
+    )
 
 
 def _cumulative_robust_tables(state, estimated, checkpoints:tuple[int,...])->dict[int,dict]:
@@ -95,15 +133,18 @@ def run_action_space_sensitivity(*,seeds:Iterable[int],comm_bits:int=5_000,sensi
     variants={"FULL":{},"HIGH_MOBILITY_PROFILE_ONLY":{"allowed_profiles":{"ti_77ghz_high_mobility_capability_profile"}},"PARKING_PROFILE_ONLY":{"allowed_profiles":{"ti_77ghz_parking_profile"}},"NO_REPETITION":{"allowed_repetitions":{1}},"FIXED_32_CHIPS":{"allowed_chips":{32}},"NO_POWER_BACKOFF":{"allowed_backoff_db":{0.0}}}; records=[]
     for seed in seeds:
         for scenario_id,state in enumerate(benchmark_states(int(seed))):
+            estimated=_estimated_state(state,state.state_uncertainty_scale)
+            table=_robust_success_table(state,estimated,robust_draws=robust_draws)
             for label,restrictions in variants.items():
-                action=_restricted_select(state,robust_draws=robust_draws,**restrictions); out=_evaluate_selected(label,action,state,comm_bits=comm_bits,sensing_trials=sensing_trials)
+                action=_select_restricted_from_table(table,**restrictions); out=_evaluate_selected(label,action,state,comm_bits=comm_bits,sensing_trials=sensing_trials)
                 records.append({"variant":label,"seed":int(seed),"scenario_id":scenario_id,"state":asdict(state),**out})
     summary={label:_full_metrics([r for r in records if r["variant"]==label]) for label in variants}; action_frequency={}
     for label in variants:
         rows=[r for r in records if r["variant"]==label and r.get("selected_action") is not None]
         counts=Counter((r["selected_action"]["profile_name"],r["selected_action"]["chips_per_chirp"],r["selected_action"]["tx_power_backoff_db"],r["selected_action"]["repetition_factor"]) for r in rows)
         action_frequency[label]={str(k):int(v) for k,v in counts.most_common()}
-    return {"records":records,"summary":summary,"action_frequency":action_frequency}
+    return {"records":records,"summary":summary,"action_frequency":action_frequency,
+            "compute_note":"All action-space variants reuse one identical robust-success table per state; variants differ only by post-table action restrictions."}
 
 
 def _shifted_truth(controller_state,family:str,rng:np.random.Generator):

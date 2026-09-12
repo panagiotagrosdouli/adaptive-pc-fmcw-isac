@@ -4,7 +4,9 @@ This stage replaces arbitrary default values with a traceable automotive-radar p
 
 ## Grounded hardware and chirp profile
 
-The primary chirp profile follows the Texas Instruments automated-parking 77-GHz reference-design example: 10 MSPS ADC sampling, 858 MHz valid sweep bandwidth, 25.6 us chirp time, 115.8 us chirp repetition time, 256 ADC samples/chirp, 64 chirps/frame and 50 ms frame duration. The carrier is set to 77 GHz within the 76-81 GHz automotive band.
+The primary chirp profile follows the Texas Instruments automated-parking 77-GHz reference-design example: 10 MSPS ADC sampling, 858 MHz valid sweep bandwidth, 40 MHz/us programmed chirp slope, 25.6 us ADC/chirp capture time, 115.8 us chirp repetition time, 256 ADC samples/chirp, 64 chirps/frame and 50 ms frame duration. The carrier is set to 77 GHz within the 76-81 GHz automotive band.
+
+The valid sweep bandwidth and programmed chirp slope are separate source quantities. In particular, the 858 MHz valid sweep must **not** be divided by the 25.6 us ADC capture interval to infer the slope: the TI profile explicitly reports the slope as 40 MHz/us. This distinction affects beat-frequency range support while leaving the c/(2B) range-resolution calculation tied to the valid sweep bandwidth.
 
 Device-level values are taken from the TI AWR1642 hardware documentation: 12 dBm transmit power, approximately 14 dB receiver noise figure in the 76-77 GHz part of the band, and phase-noise specification around -95 dBc/Hz at 1 MHz offset. These device specifications are recorded for provenance; they are **not** silently converted into an equivalent random-walk phase-noise variance because such a conversion requires an oscillator/noise-shaping model.
 
@@ -12,25 +14,26 @@ PC-FMCW is motivated and architecturally grounded by the experimental and interf
 
 ## Why the implementation uses an IF-domain analytical model
 
-A 10 MSPS automotive ADC samples the **dechirped IF/beat signal**, not the original 858-MHz FMCW transmit sweep. Directly generating an 858-MHz complex-baseband chirp at 10 MSPS would violate the sampling model. Stage 7 therefore adds an analytical FMCW IF generator: range and Doppler are inserted through the delay and Doppler equations, and only the dechirped beat signal is sampled at the documented ADC rate.
+A 10 MSPS automotive ADC samples the **dechirped IF/beat signal**, not the original FMCW transmit sweep. Directly generating an RF/baseband sweep at 10 MSPS would violate the sampling model. Stage 7 therefore adds an analytical FMCW IF generator: range and Doppler are inserted through the delay and Doppler equations, and only the dechirped beat signal is sampled at the documented ADC rate.
 
 For a monostatic target,
 
 - tau = 2R/c,
 - f_D = 2 v f_c / c,
-- f_b = mu tau + f_D,
-- mu = B/T_c.
+- f_b = mu tau + f_D.
 
-The slow-time Doppler phase advances with the chirp repetition interval T_r, not merely the active chirp duration T_c. This distinction is required for a physically meaningful unambiguous-velocity calculation.
+For a generic ideal linear chirp that sweeps exactly B during its active ramp, mu = B/T. For the source-grounded TI parking profile used here, however, mu is taken directly from the programmed 40 MHz/us slope entry while B=858 MHz remains the valid sweep bandwidth used for range resolution.
 
-## Derived values for the 858-MHz / 77-GHz profile
+The slow-time Doppler phase advances with the chirp repetition interval T_r, not merely the active/ADC capture interval. This distinction is required for a physically meaningful unambiguous-velocity calculation.
+
+## Derived values for the TI parking-style profile
 
 The simulator computes, rather than hard-codes, the following quantities:
 
-- range resolution: c/(2B), about 0.175 m,
-- positive-IF maximum range at 10 MSPS: c Fs/(4 mu), about 22.4 m,
+- range resolution: c/(2B), about 0.175 m for B=858 MHz,
+- positive-IF maximum range at 10 MSPS: c Fs/(4 mu), about 18.74 m for mu=40 MHz/us,
 - Doppler velocity resolution: lambda/(2 N T_r), about 0.263 m/s,
-- maximum unambiguous radial velocity: lambda/(4 T_r), about 8.4 m/s.
+- maximum unambiguous radial velocity: lambda/(4 T_r), about 8.41 m/s.
 
 These limits are properties of the selected short-range parking-style chirp profile. They are not universal limits of 77-GHz automotive radar.
 
@@ -40,7 +43,7 @@ SNR, residual CFO/frequency error, INR, synchronization error, RCS, antenna gain
 
 ## Sources
 
-1. Texas Instruments, *Automated Parking System Reference Design Using 77-GHz mmWave Sensor*, TIDUEO9, chirp-profile table.
+1. Texas Instruments, *Automated Parking System Reference Design Using 77-GHz mmWave Sensor*, reference design TIDEP-01011 / design guide TIDUEO9, chirp-profile table.
 2. Texas Instruments, *AWR1642 Single-Chip 77 and 79 GHz FMCW Radar Sensor* product/datasheet documentation.
 3. U. Kumbul et al., *Experimental Investigation of Phase Coded FMCW for Sensing and Communications*, EuCAP 2021, DOI 10.23919/EuCAP51087.2021.9411464.
 4. U. Kumbul et al., *Automotive Radar Interference Mitigation using Phase-Coded FMCW Waveform*, IEEE JC&S 2024, DOI 10.1109/JCS61227.2024.10646233.

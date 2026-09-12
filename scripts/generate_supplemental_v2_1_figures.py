@@ -34,6 +34,38 @@ def _plotting(out: Path):
     return plt, np
 
 
+def _runtime_series(data: dict) -> tuple[list[int], list[float], list[float]]:
+    rows = data.get("summary", data)
+    numeric: list[tuple[int, dict]] = []
+    for key, value in rows.items():
+        try:
+            draws = int(key)
+        except (TypeError, ValueError):
+            continue
+        numeric.append((draws, value))
+    if not numeric:
+        raise ValueError("runtime artifact contains no draw-count summary")
+    numeric.sort()
+    draws = [d for d, _ in numeric]
+    b3_ms = [v["B3_DETERMINISTIC_JOINT"]["median_us"] / 1000.0 for _, v in numeric]
+    b4_ms = [v["B4_ROBUST_JOINT"]["median_us"] / 1000.0 for _, v in numeric]
+    return draws, b3_ms, b4_ms
+
+
+def _mismatch_series(data: dict) -> tuple[list[str], list[float], list[float]]:
+    labels: list[str] = []
+    b3: list[float] = []
+    b4: list[float] = []
+    for family, pairs in data["summary"].items():
+        for pair, policies in pairs.items():
+            labels.append(f"{family}: {pair}")
+            b3.append(policies["B3_DETERMINISTIC_JOINT"]["joint_qos_unconditional"])
+            b4.append(policies["B4_ROBUST_JOINT"]["joint_qos_unconditional"])
+    if not labels:
+        raise ValueError("mismatch artifact contains no cases")
+    return labels, b3, b4
+
+
 def uncertainty_figure(root: Path, out: Path) -> None:
     data = _load(root, "uncertainty")["summary"]
     plt, np = _plotting(out)
@@ -65,23 +97,8 @@ def ablation_figure(root: Path, out: Path) -> None:
 def runtime_figure(root: Path, out: Path) -> None:
     data = _load(root, "runtime")
     plt, np = _plotting(out)
-    rows = data.get("summary", data)
-    # Runtime payload is keyed by robust draw count in current supplemental code.
-    numeric = []
-    for key, value in rows.items():
-        try:
-            draws = int(key)
-        except (TypeError, ValueError):
-            continue
-        numeric.append((draws, value))
-    if not numeric:
-        raise ValueError("runtime artifact contains no draw-count summary")
-    numeric.sort()
-    draws = np.array([d for d, _ in numeric])
-    b3 = [v.get("B3_DETERMINISTIC_JOINT", v.get("b3", {})).get("median_ms") for _, v in numeric]
-    b4 = [v.get("B4_ROBUST_JOINT", v.get("b4", {})).get("median_ms") for _, v in numeric]
-    if any(v is None for v in b3 + b4):
-        raise ValueError("runtime artifact missing median_ms for B3/B4")
+    draws_raw, b3, b4 = _runtime_series(data)
+    draws = np.array(draws_raw)
     fig, ax = plt.subplots(figsize=(7.2, 4.4))
     ax.plot(draws, b3, marker="o", label="B3 median")
     ax.plot(draws, b4, marker="o", label="B4 median")
@@ -110,13 +127,8 @@ def physics_figure(root: Path, out: Path) -> None:
 
 def mismatch_figure(root: Path, out: Path) -> None:
     data = _load(root, "mismatch")
-    summary = data["summary"]
     plt, np = _plotting(out)
-    labels = [] ; b3 = [] ; b4 = []
-    for case, policies in summary.items():
-        labels.append(case)
-        b3.append(policies["B3_DETERMINISTIC_JOINT"]["joint_qos_unconditional"])
-        b4.append(policies["B4_ROBUST_JOINT"]["joint_qos_unconditional"])
+    labels, b3, b4 = _mismatch_series(data)
     y = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(8.0, max(4.5, 0.36*len(labels))))
     ax.scatter(b3, y, label="B3")
@@ -143,13 +155,12 @@ def reliability_calibration_figure(root: Path, out: Path) -> None:
 def action_space_figure(root: Path, out: Path) -> None:
     data = _load(root, "action-space")["summary"]
     plt, np = _plotting(out)
-    labels = list(data); x = np.arange(len(labels)); w = .28
+    labels = list(data); x = np.arange(len(labels)); w = .36
     fig, ax = plt.subplots(figsize=(9.0, 4.8))
-    ax.bar(x-w, [data[k]["selection_rate"] for k in labels], w, label="Selection")
-    ax.bar(x, [data[k]["joint_qos_probability_conditional"] or 0.0 for k in labels], w, label="Conditional QoS")
-    ax.bar(x+w, [data[k]["mean_normalized_resource_cost_selected"] or 0.0 for k in labels], w, label="Normalized cost")
+    ax.bar(x-w/2, [data[k]["selection_rate"] for k in labels], w, label="Selection")
+    ax.bar(x+w/2, [data[k]["joint_qos_probability_conditional"] or 0.0 for k in labels], w, label="Conditional QoS")
     ax.set_xticks(x); ax.set_xticklabels([s.replace("_", "\n") for s in labels], fontsize=7)
-    ax.set_ylabel("Metric value"); ax.legend(fontsize=8); fig.tight_layout()
+    ax.set(ylim=(0, 1.05), ylabel="Probability / rate"); ax.legend(fontsize=8); fig.tight_layout()
     fig.savefig(out / "action_space_sensitivity.svg"); plt.close(fig)
 
 

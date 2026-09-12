@@ -1,5 +1,6 @@
 from pcfmcw_isac.research_analysis import (
     distribution_shift_statistics,
+    enrich_physics_map,
     failure_taxonomy,
     paired_bootstrap_binary_difference,
 )
@@ -72,3 +73,21 @@ def test_failure_taxonomy_distinguishes_abstention_and_receiver_failure():
     assert out["global"]["POLICY_ABSTENTION"] == 1
     assert out["global"]["COMM_BER"] == 1
     assert out["global"]["SUCCESS"] == 1
+
+
+def test_physics_map_enrichment_reports_range_and_velocity_rejections():
+    raw = {
+        "derived_profile_limits": {
+            "p": {"positive_if_max_range_m": 20.0, "max_unambiguous_velocity_mps": 10.0}
+        },
+        "cells": [
+            {"range_m": 30.0, "radial_velocity_mps": 15.0, "profiles": {"p": False}, "any_profile_feasible": False},
+            {"range_m": 10.0, "radial_velocity_mps": 5.0, "profiles": {"p": True}, "any_profile_feasible": True},
+        ],
+    }
+    out = enrich_physics_map(raw)
+    failed = out["cells"][0]["profile_feasibility"]["p"]
+    passed = out["cells"][1]["profile_feasibility"]["p"]
+    assert failed["reasons"] == ["RANGE_UNSUPPORTED", "VELOCITY_AMBIGUOUS"]
+    assert not failed["feasible"]
+    assert passed == {"feasible": True, "reasons": []}

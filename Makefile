@@ -7,19 +7,22 @@ SENSING_TRIALS ?= 1
 ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 
-.PHONY: setup test validate-comm validate-sensing validate-physics pilot experiments analysis figures research-smoke research-calibration research-action-space
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures gate paper-results research-smoke research-calibration research-action-space
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
+
+setup-paper:
+	$(PYTHON) -m pip install -e .[all]
 
 test:
 	pytest -q
 
 validate-comm:
-	$(PYTHON) scripts/run_e1_e5_validation.py
+	$(PYTHON) scripts/run_e1_e5_validation.py --output $(ARTIFACT_DIR)/e1_e5_validation.json
 
 validate-sensing:
-	$(PYTHON) scripts/run_stage7_validation.py
+	$(PYTHON) scripts/run_stage7_validation.py --output $(ARTIFACT_DIR)/stage7_validation.json
 
 validate-physics:
 	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment physics --n-seeds 1 --output $(ARTIFACT_DIR)/physics.json
@@ -49,6 +52,11 @@ analysis:
 	$(PYTHON) scripts/generate_supplemental_v2_1_figures.py --input-dir $(ARTIFACT_DIR) --output-dir $(ARTIFACT_DIR)/figures
 
 figures: analysis
+
+gate:
+	$(PYTHON) scripts/check_research_submission_gate.py --input-dir $(ARTIFACT_DIR) --output $(ARTIFACT_DIR)/submission-gate.json
+
+paper-results: experiments gate figures
 
 research-smoke:
 	$(MAKE) test

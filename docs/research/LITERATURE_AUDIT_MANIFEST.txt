@@ -1,0 +1,6 @@
+paper/references_v2_1.bib
+paper/manuscript_v2_1.tex
+docs/research/REFERENCE_VERIFICATION.md
+docs/research/LITERATURE_POSITIONING_AUDIT.md
+docs/research/FINAL_LITERATURE_VERDICT.md
+docs/research/REVIEWER_REFERENCE_CHECKLIST.md

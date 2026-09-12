@@ -7,7 +7,7 @@ SENSING_TRIALS ?= 1
 ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures gate paper-results research-smoke research-calibration research-action-space research-distribution-shift
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate paper-results research-smoke research-calibration research-action-space research-distribution-shift
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -29,7 +29,7 @@ validate-physics:
 
 pilot:
 	mkdir -p $(ARTIFACT_DIR)/pilot
-	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment all-smoke --seed-start $(SEED_START) --n-seeds 2 --comm-bits 1000 --sensing-trials 1 --robust-draws 32 --reference-draws 128 --truth-draws 1 --output $(ARTIFACT_DIR)/pilot/all-smoke.json
+	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment all-smoke --seed-start $(SEED_START) --n-seeds 2 --comm-bits 1000 --sensing-trials 1 --robust-draws 32 --reference-draws 128 --truth-draws 1 --bootstrap-resamples 200 --output $(ARTIFACT_DIR)/pilot/all-smoke.json
 
 research-calibration:
 	mkdir -p $(ARTIFACT_DIR)
@@ -41,7 +41,7 @@ research-action-space:
 
 research-distribution-shift:
 	mkdir -p $(ARTIFACT_DIR)
-	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment distribution-shift --seed-start $(SEED_START) --n-seeds $(N_SEEDS) --comm-bits $(COMM_BITS) --sensing-trials $(SENSING_TRIALS) --robust-draws $(ROBUST_DRAWS) --truth-draws 4 --output $(ARTIFACT_DIR)/distribution-shift.json
+	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment distribution-shift --seed-start $(SEED_START) --n-seeds $(N_SEEDS) --comm-bits $(COMM_BITS) --sensing-trials $(SENSING_TRIALS) --robust-draws $(ROBUST_DRAWS) --truth-draws 4 --bootstrap-resamples 10000 --output $(ARTIFACT_DIR)/distribution-shift.json
 
 experiments:
 	mkdir -p $(ARTIFACT_DIR)
@@ -58,10 +58,13 @@ analysis:
 
 figures: analysis
 
+tables:
+	$(PYTHON) scripts/generate_research_tables.py --input-dir $(ARTIFACT_DIR) --output-dir $(ARTIFACT_DIR)/tables
+
 gate:
 	$(PYTHON) scripts/check_research_submission_gate.py --input-dir $(ARTIFACT_DIR) --output $(ARTIFACT_DIR)/submission-gate.json
 
-paper-results: experiments gate figures
+paper-results: experiments gate figures tables
 
 research-smoke:
 	$(MAKE) test

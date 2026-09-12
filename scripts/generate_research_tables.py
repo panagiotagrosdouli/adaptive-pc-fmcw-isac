@@ -93,8 +93,20 @@ def policy_table(root: Path, out: Path) -> None:
 def calibration_table(root: Path, out: Path) -> None:
     summary = load(root, "reliability-calibration")["summary"]
     rows = [{"robust_draws": draws, **metrics} for draws, metrics in sorted(summary.items(), key=lambda x: int(x[0]))]
-    fields = ["robust_draws", "n", "false_feasible_rate", "false_infeasible_rate", "decision_disagreement_rate", "selected_action_disagreement_rate", "finite_selection_rate", "reference_selection_rate"]
-    _write_pair(out, "reliability_calibration", rows, fields, "Finite-draw reliability decision calibration.", "tab:reliability-calibration")
+    fields = [
+        "robust_draws", "n", "max_possible_wilson_lower_95", "target_attainable_at_draw_count",
+        "minimum_successes_to_accept", "minimum_empirical_success_fraction_to_accept",
+        "false_feasible_rate", "false_infeasible_rate", "decision_disagreement_rate",
+        "selected_action_disagreement_rate", "finite_selection_rate", "reference_selection_rate",
+    ]
+    _write_pair(
+        out,
+        "reliability_calibration",
+        rows,
+        fields,
+        "Finite-draw reliability decision calibration with explicit Wilson-target attainability.",
+        "tab:reliability-calibration",
+    )
 
 
 def action_space_table(root: Path, out: Path) -> None:

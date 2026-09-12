@@ -3,6 +3,8 @@ from pcfmcw_isac.policy_evaluation import _estimated_state
 from pcfmcw_isac.publication_benchmark import benchmark_states
 from pcfmcw_isac.research_extensions import (
     _cumulative_robust_tables,
+    _restricted_select,
+    _select_restricted_from_table,
     run_action_space_sensitivity,
     run_distribution_shift,
     run_reliability_calibration,
@@ -35,6 +37,24 @@ def test_reliability_calibration_smoke_and_rates_are_bounded():
             assert 0.0 <= summary[key] <= 1.0
 
 
+def test_reused_action_space_table_matches_direct_restricted_selector():
+    state = benchmark_states(10000)[0]
+    estimated = _estimated_state(state, state.state_uncertainty_scale)
+    table = _robust_success_table(state, estimated, robust_draws=16)
+    restrictions = (
+        {},
+        {"allowed_profiles": {"ti_77ghz_high_mobility_capability_profile"}},
+        {"allowed_profiles": {"ti_77ghz_parking_profile"}},
+        {"allowed_repetitions": {1}},
+        {"allowed_chips": {32}},
+        {"allowed_backoff_db": {0.0}},
+    )
+    for kwargs in restrictions:
+        direct = _restricted_select(state, robust_draws=16, **kwargs)
+        reused = _select_restricted_from_table(table, **kwargs)
+        assert reused == direct
+
+
 def test_action_space_sensitivity_contains_full_and_restricted_variants():
     out = run_action_space_sensitivity(
         seeds=range(10000, 10001), comm_bits=500, sensing_trials=1, robust_draws=16,
@@ -42,6 +62,7 @@ def test_action_space_sensitivity_contains_full_and_restricted_variants():
     expected = {"FULL", "HIGH_MOBILITY_PROFILE_ONLY", "PARKING_PROFILE_ONLY", "NO_REPETITION", "FIXED_32_CHIPS", "NO_POWER_BACKOFF"}
     assert set(out["summary"]) == expected
     assert set(out["action_frequency"]) == expected
+    assert "reuse one identical robust-success table" in out["compute_note"]
     for summary in out["summary"].values():
         assert summary["n"] > 0
         assert 0.0 <= summary["selection_rate"] <= 1.0

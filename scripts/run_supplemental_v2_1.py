@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Run reviewer-grade supplemental publication-v2.1 experiments.
-
-These experiments are supplemental to, and do not replace, the immutable frozen
-v2.1 benchmark. Outputs are simulation/analytical evidence, not measurements.
-"""
+"""Run reviewer-grade supplemental publication-v2.1 experiments."""
 from __future__ import annotations
 
 import argparse
@@ -22,17 +18,14 @@ from pcfmcw_isac.part_b_completion import (
     run_uncertainty_source_ablations,
 )
 from pcfmcw_isac.research_extensions import (
-    run_action_space_sensitivity, run_reliability_calibration,
+    run_action_space_sensitivity, run_distribution_shift, run_reliability_calibration,
 )
 
 
 def _json_safe(value: Any) -> Any:
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    if isinstance(value, dict):
-        return {key: _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_json_safe(item) for item in value]
+    if isinstance(value, float): return value if math.isfinite(value) else None
+    if isinstance(value, dict): return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)): return [_json_safe(item) for item in value]
     return value
 
 
@@ -41,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--experiment", required=True, choices=(
         "same-seed", "uncertainty", "stress", "physics", "pareto", "ablations", "mismatch", "runtime",
         "full-metrics", "reliability-targets", "confidence-maps", "uncertainty-sources",
-        "reliability-calibration", "action-space", "all-smoke",
+        "reliability-calibration", "action-space", "distribution-shift", "all-smoke",
     ))
     p.add_argument("--seed-start", type=int, default=10000)
     p.add_argument("--n-seeds", type=int, default=20)
@@ -49,13 +42,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--sensing-trials", type=int, default=1)
     p.add_argument("--robust-draws", type=int, default=256)
     p.add_argument("--reference-draws", type=int, default=4096)
+    p.add_argument("--truth-draws", type=int, default=4)
     p.add_argument("--output", required=True)
     return p.parse_args()
 
 
 def main() -> None:
-    args = parse_args()
-    seeds = range(args.seed_start, args.seed_start + args.n_seeds)
+    args = parse_args(); seeds = range(args.seed_start, args.seed_start + args.n_seeds)
     common = dict(seeds=seeds, comm_bits=args.comm_bits, sensing_trials=args.sensing_trials, robust_draws=args.robust_draws)
     runners = {
         "same-seed": run_same_seed_policy_check,
@@ -75,52 +68,30 @@ def main() -> None:
     elif args.experiment == "runtime":
         payload = run_runtime_benchmark(seeds=seeds)
     elif args.experiment == "reliability-calibration":
-        payload = run_reliability_calibration(
-            seeds=seeds,
-            robust_draws_values=(32, 64, 128, 256, 512),
-            reference_draws=args.reference_draws,
-            target=0.95,
-        )
+        payload = run_reliability_calibration(seeds=seeds, robust_draws_values=(32,64,128,256,512), reference_draws=args.reference_draws, target=0.95)
+    elif args.experiment == "distribution-shift":
+        payload = run_distribution_shift(**common, truth_draws_per_state=args.truth_draws)
     elif args.experiment in runners:
         payload = runners[args.experiment](**common)
     else:
         smoke_seeds = range(args.seed_start, args.seed_start + min(args.n_seeds, 2))
-        smoke_common = dict(
-            seeds=smoke_seeds,
-            comm_bits=min(args.comm_bits, 1000),
-            sensing_trials=1,
-            robust_draws=min(args.robust_draws, 32),
-        )
+        smoke_common = dict(seeds=smoke_seeds, comm_bits=min(args.comm_bits,1000), sensing_trials=1, robust_draws=min(args.robust_draws,32))
         payload = {name: fn(**smoke_common) for name, fn in runners.items()}
-        payload["reliability-calibration"] = run_reliability_calibration(
-            seeds=smoke_seeds,
-            robust_draws_values=(16, 32),
-            reference_draws=min(args.reference_draws, 128),
-            target=0.95,
-        )
+        payload["distribution-shift"] = run_distribution_shift(**smoke_common, truth_draws_per_state=1)
+        payload["reliability-calibration"] = run_reliability_calibration(seeds=smoke_seeds, robust_draws_values=(16,32), reference_draws=min(args.reference_draws,128), target=0.95)
         payload["physics"] = run_physics_only_maps()
-        payload["runtime"] = run_runtime_benchmark(
-            seeds=range(args.seed_start, args.seed_start + 1),
-            robust_draws_values=(32,),
-            repetitions=1,
-        )
+        payload["runtime"] = run_runtime_benchmark(seeds=range(args.seed_start,args.seed_start+1), robust_draws_values=(32,), repetitions=1)
     envelope = {
         "evidence_class": "SUPPLEMENTAL_PUBLICATION_V2_1_SIMULATION_NOT_HARDWARE_MEASUREMENT",
         "frozen_parent_protocol": "pcfmcw_isac_paper_v2_1",
         "experiment": args.experiment,
-        "seed_start": args.seed_start,
-        "n_seeds": args.n_seeds,
-        "comm_bits": args.comm_bits,
-        "sensing_trials": args.sensing_trials,
-        "robust_draws": args.robust_draws,
-        "reference_draws": args.reference_draws,
-        "results": payload,
+        "seed_start": args.seed_start, "n_seeds": args.n_seeds,
+        "comm_bits": args.comm_bits, "sensing_trials": args.sensing_trials,
+        "robust_draws": args.robust_draws, "reference_draws": args.reference_draws,
+        "truth_draws": args.truth_draws, "results": payload,
     }
-    out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(_json_safe(envelope), indent=2, allow_nan=False))
-    print(out)
+    out=Path(args.output); out.parent.mkdir(parents=True,exist_ok=True)
+    out.write_text(json.dumps(_json_safe(envelope),indent=2,allow_nan=False)); print(out)
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

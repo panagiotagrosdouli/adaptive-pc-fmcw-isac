@@ -12,6 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate submission source manifest
+        working-directory: paper
+        run: |
+          set -euo pipefail
+          test -s SUBMISSION_SOURCE_MANIFEST.txt
+          while IFS= read -r source; do
+            [ -z "$source" ] && continue
+            case "$source" in
+              /*|*..*) echo "Unsafe manifest path: $source"; exit 1 ;;
+            esac
+            test -f "$source" || { echo "Missing submission source: $source"; exit 1; }
+          done < SUBMISSION_SOURCE_MANIFEST.txt
+          for required in manuscript_v2_1.tex references_v2_1.bib final_abstract_conclusion_abstract_only.tex final_abstract_conclusion_conclusion_only.tex results_v2_1_tables.tex supplemental_v2_1_tables.tex final_results_discussion.tex; do
+            grep -Fxq "$required" SUBMISSION_SOURCE_MANIFEST.txt || { echo "Manifest omits required source: $required"; exit 1; }
+          done
       - name: Install TeX toolchain
         run: |
           sudo apt-get update
@@ -26,6 +41,13 @@ jobs:
             echo 'Unresolved citation/reference detected.'
             exit 1
           fi
+      - name: Fail on multiply-defined labels
+        working-directory: paper
+        run: |
+          if grep -E "multiply defined|There were multiply-defined labels" manuscript_v2_1.log; then
+            echo 'Multiply-defined LaTeX label detected.'
+            exit 1
+          fi
       - name: Report layout warnings
         working-directory: paper
         run: |
@@ -34,6 +56,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: manuscript-v2-1-pdf
+          if-no-files-found: error
           path: |
             paper/manuscript_v2_1.pdf
             paper/manuscript_v2_1.log
+            paper/SUBMISSION_SOURCE_MANIFEST.txt

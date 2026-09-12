@@ -24,6 +24,7 @@ from pcfmcw_isac.research_sensitivity import run_qos_threshold_sensitivity
 from pcfmcw_isac.research_analysis import (
     enrich_distribution_shift, enrich_pareto, enrich_physics_map, failure_taxonomy,
 )
+from pcfmcw_isac.statistics import wilson_lower_bound
 
 
 def _json_safe(value: Any) -> Any:
@@ -57,6 +58,35 @@ def _attach_generic_failure_taxonomy(payload: dict) -> dict:
     enriched = dict(payload); enriched["failure_taxonomy"] = failure_taxonomy(payload["records"]); return enriched
 
 
+def _enrich_reliability_calibration(payload: dict) -> dict:
+    """Expose whether a reliability target is statistically attainable at each draw count."""
+    enriched = dict(payload)
+    summary = {key: dict(value) for key, value in payload.get("summary", {}).items()}
+    target = None
+    records = payload.get("records", [])
+    if records:
+        target = float(records[0]["target"])
+    for key, row in summary.items():
+        draws = int(key)
+        max_lower = wilson_lower_bound(draws, draws, confidence=0.95)
+        if target is None:
+            target = 0.95
+        minimum_successes = next(
+            (success for success in range(draws + 1) if wilson_lower_bound(success, draws, confidence=0.95) >= target),
+            None,
+        )
+        row["max_possible_wilson_lower_95"] = max_lower
+        row["target_attainable_at_draw_count"] = bool(max_lower >= target)
+        row["minimum_successes_to_accept"] = minimum_successes
+        row["minimum_empirical_success_fraction_to_accept"] = (minimum_successes / draws) if minimum_successes is not None else None
+    enriched["summary"] = summary
+    enriched["finite_draw_attainability_note"] = (
+        "A draw count is structurally incapable of meeting the target when even an all-success Wilson lower bound is below the target; "
+        "such cases must not be interpreted as receiver or controller failures."
+    )
+    return enriched
+
+
 def main() -> None:
     args = parse_args(); seeds = range(args.seed_start, args.seed_start + args.n_seeds)
     common = dict(seeds=seeds, comm_bits=args.comm_bits, sensing_trials=args.sensing_trials, robust_draws=args.robust_draws)
@@ -75,7 +105,7 @@ def main() -> None:
     elif args.experiment == "runtime":
         payload = run_runtime_benchmark(seeds=seeds)
     elif args.experiment == "reliability-calibration":
-        payload = run_reliability_calibration(seeds=seeds, robust_draws_values=(32,64,128,256,512), reference_draws=args.reference_draws, target=0.95)
+        payload = _enrich_reliability_calibration(run_reliability_calibration(seeds=seeds, robust_draws_values=(32,64,128,256,512), reference_draws=args.reference_draws, target=0.95))
     elif args.experiment == "distribution-shift":
         payload = enrich_distribution_shift(run_distribution_shift(**common, truth_draws_per_state=args.truth_draws), n_resamples=args.bootstrap_resamples)
     elif args.experiment in runners:
@@ -86,7 +116,7 @@ def main() -> None:
         payload = {name: _attach_generic_failure_taxonomy(fn(**smoke_common)) for name, fn in runners.items()}
         payload["pareto"] = enrich_pareto(run_physical_pareto(**smoke_common))
         payload["distribution-shift"] = enrich_distribution_shift(run_distribution_shift(**smoke_common, truth_draws_per_state=1), n_resamples=min(args.bootstrap_resamples, 200))
-        payload["reliability-calibration"] = run_reliability_calibration(seeds=smoke_seeds, robust_draws_values=(16,32), reference_draws=min(args.reference_draws,128), target=0.95)
+        payload["reliability-calibration"] = _enrich_reliability_calibration(run_reliability_calibration(seeds=smoke_seeds, robust_draws_values=(16,32), reference_draws=min(args.reference_draws,128), target=0.95))
         payload["physics"] = enrich_physics_map(run_physics_only_maps())
         payload["runtime"] = run_runtime_benchmark(seeds=range(args.seed_start,args.seed_start+1), robust_draws_values=(32,), repetitions=1)
     envelope = {

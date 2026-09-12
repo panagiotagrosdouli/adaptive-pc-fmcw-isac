@@ -77,6 +77,15 @@ def validate_artifact(name: str, payload: dict) -> list[str]:
             for profile,detail in cell.get("profile_feasibility",{}).items():
                 _require("feasible" in detail and "reasons" in detail,f"{name}: malformed reason record for {profile}",errors)
                 _require("MAP_CONSISTENCY_ERROR" not in detail.get("reasons",[]),f"{name}: map consistency error for {profile}",errors)
+    elif name=="pareto":
+        points=results.get("physical_points",[]); _require(bool(points),f"{name}: no empirical physical points",errors)
+        partition=results.get("pareto",{}); _require(bool(partition),f"{name}: missing explicit Pareto partition",errors)
+        if partition:
+            _require(partition.get("n_points")==len(points),f"{name}: Pareto point count mismatch",errors)
+            _require(partition.get("n_non_dominated",0)+partition.get("n_dominated",0)==len(points),f"{name}: invalid Pareto partition counts",errors)
+            _require(bool(partition.get("objective_directions")),f"{name}: missing Pareto objective directions",errors)
+            _require(partition.get("n_non_dominated",0)>0,f"{name}: empty non-dominated frontier",errors)
+        _require("claim_boundary" in results,f"{name}: missing Pareto claim boundary",errors)
     elif name in ("mismatch","distribution-shift"):
         summary=results.get("summary",{}); _require(bool(summary),f"{name}: empty mismatch summary",errors)
         if name=="distribution-shift":
@@ -98,7 +107,6 @@ def validate_artifact(name: str, payload: dict) -> list[str]:
                 for key in ("median_us","p95_us","p99_us"): _require(b4.get(key,0)>0,f"{name}: invalid B4 {key} at draws={draws}",errors)
     elif name=="confidence-maps": _require(bool(results),f"{name}: empty confidence maps",errors)
     elif name in ("uncertainty","stress","ablations","reliability-targets","uncertainty-sources"): _require(bool(results),f"{name}: empty results",errors)
-    elif name=="pareto": _require("physical_points" in results,f"{name}: missing physical_points",errors)
     return errors
 
 

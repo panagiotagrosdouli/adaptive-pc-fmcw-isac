@@ -83,8 +83,36 @@ def test_submission_gate_accepts_calibration_shape():
                     "false_infeasible_rate": 0.02,
                     "decision_disagreement_rate": 0.03,
                     "selected_action_disagreement_rate": 0.04,
+                    "max_possible_wilson_lower_95": 0.9895,
+                    "target_attainable_at_draw_count": True,
+                    "minimum_successes_to_accept": 251,
+                    "minimum_empirical_success_fraction_to_accept": 251 / 256,
                 }
-            }
+            },
+            "finite_draw_attainability_note": "sample-size geometry is explicit",
         },
     )
     assert gate.validate_artifact("reliability-calibration", payload) == []
+
+
+def test_submission_gate_rejects_inconsistent_unattainable_calibration_row():
+    payload = _envelope(
+        "reliability-calibration",
+        {
+            "summary": {
+                "32": {
+                    "false_feasible_rate": 0.0,
+                    "false_infeasible_rate": 1.0,
+                    "decision_disagreement_rate": 1.0,
+                    "selected_action_disagreement_rate": 1.0,
+                    "max_possible_wilson_lower_95": 0.922,
+                    "target_attainable_at_draw_count": False,
+                    "minimum_successes_to_accept": 32,
+                    "minimum_empirical_success_fraction_to_accept": 1.0,
+                }
+            },
+            "finite_draw_attainability_note": "sample-size geometry is explicit",
+        },
+    )
+    errors = gate.validate_artifact("reliability-calibration", payload)
+    assert any("must not report an acceptance success count" in error for error in errors)

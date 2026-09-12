@@ -3,6 +3,7 @@
   "profile_kind": "composite_literature_grounded_not_measured_in_this_repo",
   "carrier_hz": 77000000000.0,
   "bandwidth_hz": 858000000.0,
+  "slope_hz_per_s": 40000000000000.0,
   "chirp_duration_s": 0.0000256,
   "chirp_repetition_s": 0.0001158,
   "sample_rate_hz": 10000000.0,
@@ -26,8 +27,8 @@
   },
   "sources": [
     {
-      "name": "Texas Instruments Automated Parking System Reference Design Using 77-GHz mmWave Sensor, TIDUEO9",
-      "used_for": ["ADC sample rate", "858 MHz valid sweep bandwidth", "40 MHz/us nominal slope entry", "25.6 us chirp time", "115.8 us chirp repetition", "256 samples/chirp", "64 chirps/frame", "50 ms frame duration"]
+      "name": "Texas Instruments Automated Parking System Reference Design Using 77-GHz mmWave Sensor, TIDEP-01011 / TIDUEO9",
+      "used_for": ["ADC sample rate", "858 MHz valid sweep bandwidth", "40 MHz/us programmed chirp slope", "25.6 us ADC/chirp capture time", "115.8 us chirp repetition", "256 samples/chirp", "64 chirps/frame", "50 ms frame duration"]
     },
     {
       "name": "Texas Instruments AWR1642 76-81 GHz automotive FMCW radar sensor",

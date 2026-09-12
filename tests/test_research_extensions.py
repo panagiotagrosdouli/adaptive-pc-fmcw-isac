@@ -1,8 +1,21 @@
+from pcfmcw_isac.part_b_completion import _robust_success_table
+from pcfmcw_isac.policy_evaluation import _estimated_state
+from pcfmcw_isac.publication_benchmark import benchmark_states
 from pcfmcw_isac.research_extensions import (
+    _cumulative_robust_tables,
     run_action_space_sensitivity,
     run_distribution_shift,
     run_reliability_calibration,
 )
+
+
+def test_cumulative_calibration_exactly_matches_direct_prefix_sampler():
+    state = benchmark_states(10000)[0]
+    estimated = _estimated_state(state, state.state_uncertainty_scale)
+    cumulative = _cumulative_robust_tables(state, estimated, (8, 16, 32))
+    for draws in (8, 16, 32):
+        direct = _robust_success_table(state, estimated, robust_draws=draws)
+        assert cumulative[draws] == direct
 
 
 def test_reliability_calibration_smoke_and_rates_are_bounded():

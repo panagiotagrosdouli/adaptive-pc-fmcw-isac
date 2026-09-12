@@ -21,13 +21,18 @@ from pcfmcw_isac.part_b_completion import (
     run_confidence_maps, run_full_metric_table, run_reliability_target_sweep,
     run_uncertainty_source_ablations,
 )
+from pcfmcw_isac.research_extensions import (
+    run_action_space_sensitivity, run_reliability_calibration,
+)
 
 
 def _json_safe(value: Any) -> Any:
     if isinstance(value, float):
         return value if math.isfinite(value) else None
-    if isinstance(value, dict): return {key: _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)): return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
     return value
 
 
@@ -35,43 +40,87 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--experiment", required=True, choices=(
         "same-seed", "uncertainty", "stress", "physics", "pareto", "ablations", "mismatch", "runtime",
-        "full-metrics", "reliability-targets", "confidence-maps", "uncertainty-sources", "all-smoke"
+        "full-metrics", "reliability-targets", "confidence-maps", "uncertainty-sources",
+        "reliability-calibration", "action-space", "all-smoke",
     ))
     p.add_argument("--seed-start", type=int, default=10000)
     p.add_argument("--n-seeds", type=int, default=20)
     p.add_argument("--comm-bits", type=int, default=5000)
     p.add_argument("--sensing-trials", type=int, default=1)
     p.add_argument("--robust-draws", type=int, default=256)
+    p.add_argument("--reference-draws", type=int, default=4096)
     p.add_argument("--output", required=True)
     return p.parse_args()
 
 
 def main() -> None:
-    args = parse_args(); seeds = range(args.seed_start, args.seed_start + args.n_seeds)
+    args = parse_args()
+    seeds = range(args.seed_start, args.seed_start + args.n_seeds)
     common = dict(seeds=seeds, comm_bits=args.comm_bits, sensing_trials=args.sensing_trials, robust_draws=args.robust_draws)
     runners = {
-        "same-seed": run_same_seed_policy_check, "uncertainty": run_uncertainty_sweep,
-        "stress": run_impairment_stress, "pareto": run_physical_pareto,
-        "ablations": run_extended_ablations, "mismatch": run_model_mismatch,
-        "full-metrics": run_full_metric_table, "reliability-targets": run_reliability_target_sweep,
-        "confidence-maps": run_confidence_maps, "uncertainty-sources": run_uncertainty_source_ablations,
+        "same-seed": run_same_seed_policy_check,
+        "uncertainty": run_uncertainty_sweep,
+        "stress": run_impairment_stress,
+        "pareto": run_physical_pareto,
+        "ablations": run_extended_ablations,
+        "mismatch": run_model_mismatch,
+        "full-metrics": run_full_metric_table,
+        "reliability-targets": run_reliability_target_sweep,
+        "confidence-maps": run_confidence_maps,
+        "uncertainty-sources": run_uncertainty_source_ablations,
+        "action-space": run_action_space_sensitivity,
     }
-    if args.experiment == "physics": payload = run_physics_only_maps()
-    elif args.experiment == "runtime": payload = run_runtime_benchmark(seeds=seeds)
-    elif args.experiment in runners: payload = runners[args.experiment](**common)
+    if args.experiment == "physics":
+        payload = run_physics_only_maps()
+    elif args.experiment == "runtime":
+        payload = run_runtime_benchmark(seeds=seeds)
+    elif args.experiment == "reliability-calibration":
+        payload = run_reliability_calibration(
+            seeds=seeds,
+            robust_draws_values=(32, 64, 128, 256, 512),
+            reference_draws=args.reference_draws,
+            target=0.95,
+        )
+    elif args.experiment in runners:
+        payload = runners[args.experiment](**common)
     else:
-        smoke_common = dict(seeds=range(args.seed_start, args.seed_start + min(args.n_seeds, 2)), comm_bits=min(args.comm_bits, 1000), sensing_trials=1, robust_draws=min(args.robust_draws, 32))
+        smoke_seeds = range(args.seed_start, args.seed_start + min(args.n_seeds, 2))
+        smoke_common = dict(
+            seeds=smoke_seeds,
+            comm_bits=min(args.comm_bits, 1000),
+            sensing_trials=1,
+            robust_draws=min(args.robust_draws, 32),
+        )
         payload = {name: fn(**smoke_common) for name, fn in runners.items()}
+        payload["reliability-calibration"] = run_reliability_calibration(
+            seeds=smoke_seeds,
+            robust_draws_values=(16, 32),
+            reference_draws=min(args.reference_draws, 128),
+            target=0.95,
+        )
         payload["physics"] = run_physics_only_maps()
-        payload["runtime"] = run_runtime_benchmark(seeds=range(args.seed_start, args.seed_start + 1), robust_draws_values=(32,), repetitions=1)
+        payload["runtime"] = run_runtime_benchmark(
+            seeds=range(args.seed_start, args.seed_start + 1),
+            robust_draws_values=(32,),
+            repetitions=1,
+        )
     envelope = {
         "evidence_class": "SUPPLEMENTAL_PUBLICATION_V2_1_SIMULATION_NOT_HARDWARE_MEASUREMENT",
-        "frozen_parent_protocol": "pcfmcw_isac_paper_v2_1", "experiment": args.experiment,
-        "seed_start": args.seed_start, "n_seeds": args.n_seeds, "comm_bits": args.comm_bits,
-        "sensing_trials": args.sensing_trials, "robust_draws": args.robust_draws, "results": payload,
+        "frozen_parent_protocol": "pcfmcw_isac_paper_v2_1",
+        "experiment": args.experiment,
+        "seed_start": args.seed_start,
+        "n_seeds": args.n_seeds,
+        "comm_bits": args.comm_bits,
+        "sensing_trials": args.sensing_trials,
+        "robust_draws": args.robust_draws,
+        "reference_draws": args.reference_draws,
+        "results": payload,
     }
-    out = Path(args.output); out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(_json_safe(envelope), indent=2, allow_nan=False)); print(out)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(_json_safe(envelope), indent=2, allow_nan=False))
+    print(out)
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()

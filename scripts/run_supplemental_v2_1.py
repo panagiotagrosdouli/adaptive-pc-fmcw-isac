@@ -20,6 +20,7 @@ from pcfmcw_isac.part_b_completion import (
 from pcfmcw_isac.research_extensions import (
     run_action_space_sensitivity, run_distribution_shift, run_reliability_calibration,
 )
+from pcfmcw_isac.research_analysis import enrich_distribution_shift, failure_taxonomy
 
 
 def _json_safe(value: Any) -> Any:
@@ -43,8 +44,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--robust-draws", type=int, default=256)
     p.add_argument("--reference-draws", type=int, default=4096)
     p.add_argument("--truth-draws", type=int, default=4)
+    p.add_argument("--bootstrap-resamples", type=int, default=10000)
     p.add_argument("--output", required=True)
     return p.parse_args()
+
+
+def _attach_generic_failure_taxonomy(payload: dict) -> dict:
+    if not isinstance(payload, dict) or "records" not in payload:
+        return payload
+    enriched = dict(payload)
+    enriched["failure_taxonomy"] = failure_taxonomy(payload["records"])
+    return enriched
 
 
 def main() -> None:
@@ -70,14 +80,20 @@ def main() -> None:
     elif args.experiment == "reliability-calibration":
         payload = run_reliability_calibration(seeds=seeds, robust_draws_values=(32,64,128,256,512), reference_draws=args.reference_draws, target=0.95)
     elif args.experiment == "distribution-shift":
-        payload = run_distribution_shift(**common, truth_draws_per_state=args.truth_draws)
+        payload = enrich_distribution_shift(
+            run_distribution_shift(**common, truth_draws_per_state=args.truth_draws),
+            n_resamples=args.bootstrap_resamples,
+        )
     elif args.experiment in runners:
-        payload = runners[args.experiment](**common)
+        payload = _attach_generic_failure_taxonomy(runners[args.experiment](**common))
     else:
         smoke_seeds = range(args.seed_start, args.seed_start + min(args.n_seeds, 2))
         smoke_common = dict(seeds=smoke_seeds, comm_bits=min(args.comm_bits,1000), sensing_trials=1, robust_draws=min(args.robust_draws,32))
-        payload = {name: fn(**smoke_common) for name, fn in runners.items()}
-        payload["distribution-shift"] = run_distribution_shift(**smoke_common, truth_draws_per_state=1)
+        payload = {name: _attach_generic_failure_taxonomy(fn(**smoke_common)) for name, fn in runners.items()}
+        payload["distribution-shift"] = enrich_distribution_shift(
+            run_distribution_shift(**smoke_common, truth_draws_per_state=1),
+            n_resamples=min(args.bootstrap_resamples, 200),
+        )
         payload["reliability-calibration"] = run_reliability_calibration(seeds=smoke_seeds, robust_draws_values=(16,32), reference_draws=min(args.reference_draws,128), target=0.95)
         payload["physics"] = run_physics_only_maps()
         payload["runtime"] = run_runtime_benchmark(seeds=range(args.seed_start,args.seed_start+1), robust_draws_values=(32,), repetitions=1)
@@ -88,7 +104,8 @@ def main() -> None:
         "seed_start": args.seed_start, "n_seeds": args.n_seeds,
         "comm_bits": args.comm_bits, "sensing_trials": args.sensing_trials,
         "robust_draws": args.robust_draws, "reference_draws": args.reference_draws,
-        "truth_draws": args.truth_draws, "results": payload,
+        "truth_draws": args.truth_draws, "bootstrap_resamples": args.bootstrap_resamples,
+        "results": payload,
     }
     out=Path(args.output); out.parent.mkdir(parents=True,exist_ok=True)
     out.write_text(json.dumps(_json_safe(envelope),indent=2,allow_nan=False)); print(out)

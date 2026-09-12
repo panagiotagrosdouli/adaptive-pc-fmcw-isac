@@ -11,7 +11,7 @@ For chirp index m and fast time t, the idealized transmitted waveform is
 
 s_m(t) = sqrt(P_m) exp(j[pi mu t^2 + phi_m(t)]),
 
-where mu=B/Tc is the FMCW slope and phi_m(t) is the phase-coded communication sequence. Multiple phase-code chips may be transmitted during one chirp.
+where mu is the programmed FMCW slope and phi_m(t) is the phase-coded communication sequence. For an ideal linear chirp whose active ramp sweeps exactly B in time T, mu=B/T. A source-defined hardware profile may instead report valid sweep bandwidth, programmed slope, and ADC-valid capture time separately; those quantities must not be collapsed into B/T unless the source definition warrants it.
 
 ## Sensing path
 
@@ -39,12 +39,12 @@ The communication modem is a reference implementation, not a measured automotive
 
 ## Literature-grounded profile
 
-The primary validation profile is based on a published TI 77-GHz automated-parking chirp example: 858 MHz valid sweep bandwidth, 25.6 us chirp time, 115.8 us chirp repetition, 10 MSPS ADC rate, 256 samples/chirp and 64 chirps/frame. Device values such as 12 dBm TX power, receiver noise figure and phase-noise specification are retained as provenance metadata rather than silently converted into unsupported stochastic models.
+The primary validation profile is based on the Texas Instruments TIDEP-01011 automated-parking reference design (design guide TIDUEO9): 858 MHz valid sweep bandwidth, 40 MHz/us programmed chirp slope, 25.6 us ADC/chirp capture time, 115.8 us chirp repetition, 10 MSPS ADC rate, 256 samples/chirp and 64 chirps/frame. The model therefore uses 858 MHz for c/(2B) range resolution and 40 MHz/us for beat-frequency/range-support calculations. At 10 MSPS this gives about 18.74 m positive-IF range support. Device values such as 12 dBm TX power, receiver noise figure and phase-noise specification are retained as provenance metadata rather than silently converted into unsupported stochastic models.
 
 ## Adaptive PHY problem
 
-The adaptation layer observes imperfect estimates of communication/sensing state and chooses a finite PHY action. The proposed policy minimizes resource cost subject to a target probability that communication reliability and sensing accuracy constraints are met. Controlled uncertainty, residual synchronization error and mutual interference are evaluated separately from literature-grounded hardware constants.
+The adaptation layer observes imperfect estimates of communication/sensing state and chooses a finite PHY action. The proposed policy minimizes a declared dimensionless resource cost subject to a target probability that communication reliability and sensing accuracy constraints are met. Controlled uncertainty, residual synchronization error and mutual interference are evaluated separately from literature-grounded hardware constants.
 
 ## Scope boundary
 
-This repository studies waveform/PHY/link adaptation. It does not perform trajectory forecasting, packet/user scheduling, beam selection, ADB control or ego-motion planning.
+This repository studies waveform/PHY/link adaptation. It does not perform trajectory forecasting, packet/user scheduling, beam selection, ADB control or ego-motion planning. Its reported numerical evidence is controlled simulation/analytical evidence, not new RF hardware measurements.

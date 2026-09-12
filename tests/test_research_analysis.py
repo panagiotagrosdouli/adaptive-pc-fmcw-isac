@@ -95,13 +95,14 @@ def test_physics_map_enrichment_reports_range_and_velocity_rejections():
     assert passed == {"feasible": True, "reasons": []}
 
 
-def _pareto_point(name, qos, rate, tx, rep, adc, rr, vr):
+def _pareto_point(name, qos, rate, tx, rep, chips, adc, rr, vr):
     return {
         "name": name,
         "joint_qos_probability": qos,
         "mean_effective_rate_bps": rate,
         "tx_power_fraction": tx,
         "repetition_factor": rep,
+        "chips_per_chirp": chips,
         "profile_adc_samples_per_frame": adc,
         "mean_range_rmse_m": rr,
         "mean_velocity_rmse_mps": vr,
@@ -109,9 +110,9 @@ def _pareto_point(name, qos, rate, tx, rep, adc, rr, vr):
 
 
 def test_pareto_partition_marks_strictly_worse_point_dominated():
-    strong = _pareto_point("strong", 1.0, 2e5, 0.5, 1, 1000, 0.2, 0.2)
-    weak = _pareto_point("weak", 0.8, 1e5, 1.0, 2, 2000, 0.5, 0.5)
-    tradeoff = _pareto_point("tradeoff", 1.0, 3e5, 0.8, 1, 1000, 0.2, 0.2)
+    strong = _pareto_point("strong", 1.0, 2e5, 0.5, 1, 16, 1000, 0.2, 0.2)
+    weak = _pareto_point("weak", 0.8, 1e5, 1.0, 2, 64, 2000, 0.5, 0.5)
+    tradeoff = _pareto_point("tradeoff", 1.0, 3e5, 0.8, 1, 16, 1000, 0.2, 0.2)
     out = pareto_partition([strong, weak, tradeoff])
     assert out["n_points"] == 3
     assert out["n_dominated"] == 1
@@ -119,8 +120,16 @@ def test_pareto_partition_marks_strictly_worse_point_dominated():
     assert {p["name"] for p in out["non_dominated_points"]} == {"strong", "tradeoff"}
 
 
+def test_pareto_partition_prefers_lower_chip_occupancy_when_else_equal():
+    low_chips = _pareto_point("low_chips", 1.0, 2e5, 0.5, 1, 16, 1000, 0.2, 0.2)
+    high_chips = _pareto_point("high_chips", 1.0, 2e5, 0.5, 1, 64, 1000, 0.2, 0.2)
+    out = pareto_partition([low_chips, high_chips])
+    assert [p["name"] for p in out["non_dominated_points"]] == ["low_chips"]
+    assert out["dominated_points"][0]["name"] == "high_chips"
+
+
 def test_enrich_pareto_declares_empirical_claim_boundary():
-    point = _pareto_point("only", 1.0, 2e5, 0.5, 1, 1000, 0.2, 0.2)
+    point = _pareto_point("only", 1.0, 2e5, 0.5, 1, 16, 1000, 0.2, 0.2)
     out = enrich_pareto({"physical_points": [point]})
     assert out["pareto"]["n_non_dominated"] == 1
     assert out["pareto"]["n_dominated"] == 0

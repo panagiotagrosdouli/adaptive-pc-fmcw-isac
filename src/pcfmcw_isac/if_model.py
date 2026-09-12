@@ -1,8 +1,14 @@
 """Literature-grounded FMCW IF-domain model.
 
-The ADC in a practical FMCW radar samples the dechirped IF/beat signal.  This
-module therefore avoids generating an RF/858-MHz sweep at a 10-MSPS ADC rate.
-It analytically forms the sampled beat signal from range and Doppler.
+The ADC in a practical FMCW radar samples the dechirped IF/beat signal. This
+module therefore avoids generating an RF sweep at the ADC sample rate and
+analytically forms the sampled beat signal from range and Doppler.
+
+For real chirp profiles, *valid sweep bandwidth* and programmed chirp slope are
+not necessarily related by ``B / T_adc``: the ADC capture window can cover only
+part of a ramp.  ``RadarProfile`` therefore stores an optional explicit slope.
+Range resolution continues to use the declared valid sweep bandwidth, whereas
+beat-frequency/range-support calculations use the actual chirp slope.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -20,11 +26,14 @@ class RadarProfile:
     sample_rate_hz: float = 10e6
     samples_per_chirp: int = 256
     n_chirps: int = 64
+    explicit_slope_hz_per_s: float | None = 40e12
 
     def validate(self) -> None:
         if min(self.carrier_hz, self.bandwidth_hz, self.chirp_duration_s,
                self.chirp_repetition_s, self.sample_rate_hz) <= 0:
             raise ValueError("profile values must be positive")
+        if self.explicit_slope_hz_per_s is not None and self.explicit_slope_hz_per_s <= 0:
+            raise ValueError("explicit_slope_hz_per_s must be positive when provided")
         if self.chirp_repetition_s < self.chirp_duration_s:
             raise ValueError("chirp repetition interval must be >= active chirp duration")
         expected = self.sample_rate_hz * self.chirp_duration_s
@@ -35,6 +44,8 @@ class RadarProfile:
 
     @property
     def slope_hz_per_s(self) -> float:
+        if self.explicit_slope_hz_per_s is not None:
+            return self.explicit_slope_hz_per_s
         return self.bandwidth_hz / self.chirp_duration_s
 
     @property

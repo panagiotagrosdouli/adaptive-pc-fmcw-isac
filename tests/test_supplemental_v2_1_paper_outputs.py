@@ -1,5 +1,8 @@
 import importlib.util
+import json
 from pathlib import Path
+
+import pytest
 
 
 def _load_module():
@@ -11,29 +14,66 @@ def _load_module():
     return module
 
 
-def test_uncertainty_story_matches_successful_artifact_snapshot():
+def test_artifact_loader_reads_results_envelope(tmp_path):
     m = _load_module()
-    assert m.UNCERTAINTY[1.0]["b3_cond"] == 0.8738738739
-    assert m.UNCERTAINTY[1.0]["b4_cond"] == 1.0
-    assert m.UNCERTAINTY[3.0]["b4_sel"] == 0.0591666667
-    assert m.UNCERTAINTY[3.0]["b4_cond"] == 0.9859154930
+    payload = {"results": {"summary": {"case": {"selection_rate": 0.5}}}}
+    (tmp_path / "uncertainty.json").write_text(json.dumps(payload))
+
+    assert m._load(tmp_path, "uncertainty") == payload["results"]
 
 
-def test_ablation_snapshot_retains_negative_results():
+def test_artifact_loader_rejects_missing_results_envelope(tmp_path):
     m = _load_module()
-    assert m.ABLATIONS["NO_PHYSICS_GATE"][1] == 0.0
-    assert m.ABLATIONS["NO_STATE_UNCERTAINTY"][1] < 1.0
-    assert m.ABLATIONS["NO_JOINT_CONSTRAINT"][0] > m.ABLATIONS["FULL_B4"][0]
+    (tmp_path / "uncertainty.json").write_text(json.dumps({"summary": {}}))
+
+    with pytest.raises(ValueError, match="artifact has no results envelope"):
+        m._load(tmp_path, "uncertainty")
 
 
-def test_runtime_snapshot_does_not_support_512_draw_real_time_claim():
+def test_runtime_series_uses_machine_readable_medians_and_ms_units():
     m = _load_module()
-    b3_ms, b4_ms = m.RUNTIME_MS[512]
-    assert b3_ms < 1.0
-    assert b4_ms > 200.0
+    data = {
+        "summary": {
+            "512": {
+                "B3_DETERMINISTIC_JOINT": {"median_us": 750.0},
+                "B4_ROBUST_JOINT": {"median_us": 250000.0},
+            },
+            "64": {
+                "B3_DETERMINISTIC_JOINT": {"median_us": 500.0},
+                "B4_ROBUST_JOINT": {"median_us": 32000.0},
+            },
+        }
+    }
+
+    draws, b3_ms, b4_ms = m._runtime_series(data)
+
+    assert draws == [64, 512]
+    assert b3_ms == [0.5, 0.75]
+    assert b4_ms == [32.0, 250.0]
 
 
-def test_physics_limits_preserve_profile_separation():
+def test_runtime_series_rejects_artifacts_without_draw_counts():
     m = _load_module()
-    assert m.PARKING_RMAX < m.MOBILE_RMAX
-    assert m.PARKING_VMAX < m.MOBILE_VMAX
+
+    with pytest.raises(ValueError, match="runtime artifact contains no draw-count summary"):
+        m._runtime_series({"summary": {"metadata": {}}})
+
+
+def test_mismatch_series_preserves_case_labels_and_policy_values():
+    m = _load_module()
+    data = {
+        "summary": {
+            "family_a": {
+                "nominal_to_shifted": {
+                    "B3_DETERMINISTIC_JOINT": {"joint_qos_unconditional": 0.25},
+                    "B4_ROBUST_JOINT": {"joint_qos_unconditional": 0.75},
+                }
+            }
+        }
+    }
+
+    labels, b3, b4 = m._mismatch_series(data)
+
+    assert labels == ["family_a: nominal_to_shifted"]
+    assert b3 == [0.25]
+    assert b4 == [0.75]

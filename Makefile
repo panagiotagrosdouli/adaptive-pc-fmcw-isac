@@ -6,8 +6,9 @@ COMM_BITS ?= 5000
 SENSING_TRIALS ?= 1
 ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
+FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -68,7 +69,13 @@ tables:
 gate:
 	$(PYTHON) scripts/check_research_submission_gate.py --input-dir $(ARTIFACT_DIR) --output $(ARTIFACT_DIR)/submission-gate.json
 
-paper-results: experiments gate figures tables
+verdict:
+	$(PYTHON) scripts/summarize_research_evidence.py --input-dir $(ARTIFACT_DIR) --output $(ARTIFACT_DIR)/scientific-verdict.json --bootstrap-resamples 10000
+
+frozen-e9-confidence:
+	$(PYTHON) scripts/postprocess_frozen_e9_confidence.py --input $(FROZEN_E9_E11) --output $(ARTIFACT_DIR)/frozen-e9-confidence.json --trials-per-cell 20 --target 0.95 --confidence 0.95
+
+paper-results: experiments gate verdict figures tables
 
 research-smoke:
 	$(MAKE) test

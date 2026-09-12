@@ -28,6 +28,7 @@ Evidence base: frozen publication v2.1 simulation artifacts, completed reviewer-
 | Frozen E9 raw-mean flags are 95% reliability guarantees | DO_NOT_CLAIM | Flags are based on empirical means, not confidence lower bounds. | Call them sampled operating-region characterization. |
 | The empirical Pareto set proves global Pareto optimality | DO_NOT_CLAIM | Supplemental Pareto analysis covers realized B4-selected receiver-level operating points only. | Say empirical Pareto partition over observed selected points. |
 | Normalized resource cost is physical energy | DO_NOT_CLAIM | It is an experiment-defined dimensionless metric. | Call it normalized resource cost. |
+| Packet-level PER is established | DO_NOT_CLAIM | The receiver model does not independently estimate PER and no packet model is declared. | Do not infer or report packet-level PER from BER alone. |
 
 ## Highest-confidence paper claim
 

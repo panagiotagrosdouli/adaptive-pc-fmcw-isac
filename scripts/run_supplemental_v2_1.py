@@ -20,6 +20,7 @@ from pcfmcw_isac.part_b_completion import (
 from pcfmcw_isac.research_extensions import (
     run_action_space_sensitivity, run_distribution_shift, run_reliability_calibration,
 )
+from pcfmcw_isac.research_sensitivity import run_qos_threshold_sensitivity
 from pcfmcw_isac.research_analysis import (
     enrich_distribution_shift, enrich_physics_map, failure_taxonomy,
 )
@@ -37,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--experiment", required=True, choices=(
         "same-seed", "uncertainty", "stress", "physics", "pareto", "ablations", "mismatch", "runtime",
         "full-metrics", "reliability-targets", "confidence-maps", "uncertainty-sources",
-        "reliability-calibration", "action-space", "distribution-shift", "all-smoke",
+        "reliability-calibration", "action-space", "distribution-shift", "qos-sensitivity", "all-smoke",
     ))
     p.add_argument("--seed-start", type=int, default=10000)
     p.add_argument("--n-seeds", type=int, default=20)
@@ -65,7 +66,7 @@ def main() -> None:
         "ablations": run_extended_ablations, "mismatch": run_model_mismatch,
         "full-metrics": run_full_metric_table, "reliability-targets": run_reliability_target_sweep,
         "confidence-maps": run_confidence_maps, "uncertainty-sources": run_uncertainty_source_ablations,
-        "action-space": run_action_space_sensitivity,
+        "action-space": run_action_space_sensitivity, "qos-sensitivity": run_qos_threshold_sensitivity,
     }
     if args.experiment == "physics":
         payload = enrich_physics_map(run_physics_only_maps())

@@ -7,7 +7,7 @@ SENSING_TRIALS ?= 1
 ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures gate paper-results research-smoke research-calibration research-action-space
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures gate paper-results research-smoke research-calibration research-action-space research-distribution-shift
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -29,7 +29,7 @@ validate-physics:
 
 pilot:
 	mkdir -p $(ARTIFACT_DIR)/pilot
-	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment all-smoke --seed-start $(SEED_START) --n-seeds 2 --comm-bits 1000 --sensing-trials 1 --robust-draws 32 --reference-draws 128 --output $(ARTIFACT_DIR)/pilot/all-smoke.json
+	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment all-smoke --seed-start $(SEED_START) --n-seeds 2 --comm-bits 1000 --sensing-trials 1 --robust-draws 32 --reference-draws 128 --truth-draws 1 --output $(ARTIFACT_DIR)/pilot/all-smoke.json
 
 research-calibration:
 	mkdir -p $(ARTIFACT_DIR)
@@ -39,12 +39,17 @@ research-action-space:
 	mkdir -p $(ARTIFACT_DIR)
 	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment action-space --seed-start $(SEED_START) --n-seeds $(N_SEEDS) --comm-bits $(COMM_BITS) --sensing-trials $(SENSING_TRIALS) --robust-draws $(ROBUST_DRAWS) --output $(ARTIFACT_DIR)/action-space.json
 
+research-distribution-shift:
+	mkdir -p $(ARTIFACT_DIR)
+	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment distribution-shift --seed-start $(SEED_START) --n-seeds $(N_SEEDS) --comm-bits $(COMM_BITS) --sensing-trials $(SENSING_TRIALS) --robust-draws $(ROBUST_DRAWS) --truth-draws 4 --output $(ARTIFACT_DIR)/distribution-shift.json
+
 experiments:
 	mkdir -p $(ARTIFACT_DIR)
 	for exp in uncertainty stress pareto ablations mismatch full-metrics reliability-targets confidence-maps uncertainty-sources action-space; do \
 		$(PYTHON) scripts/run_supplemental_v2_1.py --experiment $$exp --seed-start $(SEED_START) --n-seeds $(N_SEEDS) --comm-bits $(COMM_BITS) --sensing-trials $(SENSING_TRIALS) --robust-draws $(ROBUST_DRAWS) --output $(ARTIFACT_DIR)/$$exp.json || exit 1; \
 	done
 	$(MAKE) research-calibration
+	$(MAKE) research-distribution-shift
 	$(MAKE) validate-physics
 	$(PYTHON) scripts/run_supplemental_v2_1.py --experiment runtime --seed-start $(SEED_START) --n-seeds 10 --output $(ARTIFACT_DIR)/runtime.json
 

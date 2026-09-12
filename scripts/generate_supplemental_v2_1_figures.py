@@ -81,8 +81,47 @@ def action_space_figure(root,out):
     data=_load(root,"action-space")["summary"]; plt,np=_plotting(out); labels=list(data); x=np.arange(len(labels)); w=.36; fig,ax=plt.subplots(figsize=(9.,4.8)); ax.bar(x-w/2,[data[k]["selection_rate"] for k in labels],w,label="Selection"); ax.bar(x+w/2,[data[k]["joint_qos_probability_conditional"] or 0. for k in labels],w,label="Conditional QoS"); ax.set_xticks(x); ax.set_xticklabels([s.replace("_","\n") for s in labels],fontsize=7); ax.set(ylim=(0,1.05),ylabel="Probability / rate"); ax.legend(fontsize=8); fig.tight_layout(); fig.savefig(out/"action_space_sensitivity.svg"); plt.close(fig)
 
 
+def reliability_target_figure(root,out):
+    data=_load(root,"reliability-targets")["summary"]; plt,np=_plotting(out); targets=np.array(sorted(float(k) for k in data)); rows=[data[str(float(t))] for t in targets]
+    fig,ax=plt.subplots(figsize=(7.3,4.5)); ax.plot(targets,[r["selection_rate"] for r in rows],marker="o",label="Selection rate"); ax.plot(targets,[r["joint_qos_probability_conditional"] or 0. for r in rows],marker="s",label="Conditional joint QoS"); ax.plot(targets,[r["wilson_lower_95_conditional"] or 0. for r in rows],marker="^",linestyle="--",label="Conditional Wilson LCB"); ax.set(xlabel="Reliability target",ylabel="Probability / rate",ylim=(0,1.05)); ax.grid(True,alpha=.25); ax.legend(fontsize=8); fig.tight_layout(); fig.savefig(out/"reliability_target_sensitivity.svg"); plt.close(fig)
+
+
+def qos_sensitivity_figure(root,out):
+    data=_load(root,"qos-sensitivity")["summary"]; plt,np=_plotting(out); labels=list(data); x=np.arange(len(labels)); w=.36
+    b3=[data[k]["B3_DETERMINISTIC_JOINT"]["counterfactual_joint_qos_unconditional"] for k in labels]; b4=[data[k]["B4_ROBUST_JOINT"]["counterfactual_joint_qos_unconditional"] for k in labels]
+    fig,ax=plt.subplots(figsize=(9.2,4.8)); ax.bar(x-w/2,b3,w,label="B3 unconditional joint QoS"); ax.bar(x+w/2,b4,w,label="B4 unconditional joint QoS"); ax.set_xticks(x); ax.set_xticklabels([s.replace("_","\n") for s in labels],fontsize=7); ax.set(ylim=(0,1.05),ylabel="Counterfactual probability"); ax.legend(fontsize=8); fig.tight_layout(); fig.savefig(out/"qos_threshold_sensitivity.svg"); plt.close(fig)
+
+
+def uncertainty_sources_figure(root,out):
+    data=_load(root,"uncertainty-sources")["summary"]; plt,np=_plotting(out); labels=list(data); x=np.arange(len(labels)); w=.36
+    fig,ax=plt.subplots(figsize=(9.0,4.8)); ax.bar(x-w/2,[data[k]["selection_rate"] for k in labels],w,label="Selection rate"); ax.bar(x+w/2,[data[k]["joint_qos_probability_conditional"] or 0. for k in labels],w,label="Conditional joint QoS"); ax.set_xticks(x); ax.set_xticklabels([s.replace("_","\n") for s in labels],fontsize=7); ax.set(ylim=(0,1.05),ylabel="Probability / rate"); ax.legend(fontsize=8); fig.tight_layout(); fig.savefig(out/"uncertainty_source_ablation.svg"); plt.close(fig)
+
+
+def confidence_map_figures(root,out):
+    maps=_load(root,"confidence-maps"); plt,np=_plotting(out)
+    for name,data in maps.items():
+        xs=list(data["x"]); ys=list(data["y"]); index={(c["x"],c["y"]):c for c in data["cells"]}; z=np.full((len(ys),len(xs)),np.nan)
+        for i,y in enumerate(ys):
+            for j,x in enumerate(xs):
+                value=index[(x,y)].get("wilson_lower_95_conditional"); z[i,j]=np.nan if value is None else float(value)
+        fig,ax=plt.subplots(figsize=(7.3,4.7)); im=ax.imshow(z,origin="lower",aspect="auto",extent=[min(xs),max(xs),min(ys),max(ys)],vmin=0,vmax=1); ax.set(xlabel="x-axis value",ylabel="y-axis value",title=f"{name}: conditional 95% Wilson lower bound"); fig.colorbar(im,ax=ax); fig.tight_layout(); fig.savefig(out/f"confidence_map_{name}.svg"); plt.close(fig)
+
+
+def pareto_figure(root,out):
+    data=_load(root,"pareto"); plt,np=_plotting(out); points=data.get("physical_points",[]); partition=data.get("pareto",{}); frontier={int(p["point_index"]) for p in partition.get("non_dominated_points",[])}
+    if not points: raise ValueError("pareto artifact contains no physical points")
+    fig,ax=plt.subplots(figsize=(7.3,4.5))
+    dominated=[(i,p) for i,p in enumerate(points) if i not in frontier]; nondominated=[(i,p) for i,p in enumerate(points) if i in frontier]
+    if dominated: ax.scatter([p["tx_power_fraction"] for _,p in dominated],[p["joint_qos_probability"] for _,p in dominated],label="Dominated")
+    if nondominated: ax.scatter([p["tx_power_fraction"] for _,p in nondominated],[p["joint_qos_probability"] for _,p in nondominated],marker="x",label="Non-dominated")
+    ax.set(xlabel="Transmit-power fraction",ylabel="Joint QoS probability",ylim=(-.02,1.02)); ax.grid(True,alpha=.25); ax.legend(fontsize=8); fig.tight_layout(); fig.savefig(out/"empirical_pareto.svg"); plt.close(fig)
+
+
 def main():
-    args=parse_args(); root=Path(args.input_dir); out=Path(args.output_dir); uncertainty_figure(root,out); ablation_figure(root,out); runtime_figure(root,out); physics_figure(root,out); mismatch_figure(root,out); distribution_shift_figure(root,out); reliability_calibration_figure(root,out); action_space_figure(root,out)
+    args=parse_args(); root=Path(args.input_dir); out=Path(args.output_dir)
+    uncertainty_figure(root,out); ablation_figure(root,out); runtime_figure(root,out); physics_figure(root,out)
+    mismatch_figure(root,out); distribution_shift_figure(root,out); reliability_calibration_figure(root,out); action_space_figure(root,out)
+    reliability_target_figure(root,out); qos_sensitivity_figure(root,out); uncertainty_sources_figure(root,out); confidence_map_figures(root,out); pareto_figure(root,out)
 
 
 if __name__=="__main__": main()

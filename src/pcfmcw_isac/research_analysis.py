@@ -1,4 +1,4 @@
-"""Machine-readable statistical, failure and physics analysis for research artifacts."""
+"""Machine-readable statistical, failure, physics and Pareto analysis."""
 from __future__ import annotations
 
 from collections import Counter
@@ -67,11 +67,7 @@ def enrich_distribution_shift(result: dict, *, n_resamples: int = 10_000) -> dic
 
 
 def enrich_physics_map(result: dict) -> dict:
-    """Attach per-profile machine-readable rejection reasons to existing map cells.
-
-    Uses the exact derived hard limits already emitted by the physics experiment;
-    it does not infer receiver QoS or change the existing boolean support map.
-    """
+    """Attach per-profile machine-readable rejection reasons to existing map cells."""
     limits=result.get("derived_profile_limits",{}); enriched=dict(result); cells=[]
     for cell in result.get("cells",[]):
         new_cell=dict(cell); reasons={}
@@ -82,9 +78,71 @@ def enrich_physics_map(result: dict) -> dict:
             if r < 0.0: codes.append("NEGATIVE_RANGE")
             elif "positive_if_max_range_m" in profile_limits and r > float(profile_limits["positive_if_max_range_m"]): codes.append("RANGE_UNSUPPORTED")
             if "max_unambiguous_velocity_mps" in profile_limits and abs(v) > float(profile_limits["max_unambiguous_velocity_mps"]): codes.append("VELOCITY_AMBIGUOUS")
-            if bool(supported) != (not codes):
-                codes.append("MAP_CONSISTENCY_ERROR")
+            if bool(supported) != (not codes): codes.append("MAP_CONSISTENCY_ERROR")
             reasons[profile]={"feasible":bool(supported),"reasons":codes}
         new_cell["profile_feasibility"] = reasons; cells.append(new_cell)
     enriched["cells"]=cells
+    return enriched
+
+
+PARETO_OBJECTIVES = {
+    "joint_qos_probability": "maximize",
+    "mean_effective_rate_bps": "maximize",
+    "tx_power_fraction": "minimize",
+    "repetition_factor": "minimize",
+    "profile_adc_samples_per_frame": "minimize",
+    "mean_range_rmse_m": "minimize",
+    "mean_velocity_rmse_mps": "minimize",
+}
+
+
+def _finite_objective(point: dict, key: str) -> float:
+    value = point.get(key)
+    if value is None or not np.isfinite(float(value)):
+        raise ValueError(f"Pareto point has missing/non-finite objective {key!r}")
+    return float(value)
+
+
+def _dominates(a: dict, b: dict) -> bool:
+    """True iff a is no worse in every declared objective and better in >=1."""
+    no_worse = True
+    strictly_better = False
+    for key, direction in PARETO_OBJECTIVES.items():
+        av = _finite_objective(a, key); bv = _finite_objective(b, key)
+        if direction == "maximize":
+            if av < bv: no_worse = False; break
+            if av > bv: strictly_better = True
+        else:
+            if av > bv: no_worse = False; break
+            if av < bv: strictly_better = True
+    return no_worse and strictly_better
+
+
+def pareto_partition(points: Iterable[dict]) -> dict:
+    """Partition empirical operating points into non-dominated and dominated sets."""
+    rows=[dict(p) for p in points]
+    dominated=[]; frontier=[]
+    for i, point in enumerate(rows):
+        dominators=[j for j, other in enumerate(rows) if j != i and _dominates(other, point)]
+        annotated={**point,"point_index":i,"dominated_by_indices":dominators}
+        (dominated if dominators else frontier).append(annotated)
+    return {
+        "objective_directions": dict(PARETO_OBJECTIVES),
+        "n_points": len(rows),
+        "n_non_dominated": len(frontier),
+        "n_dominated": len(dominated),
+        "non_dominated_points": frontier,
+        "dominated_points": dominated,
+    }
+
+
+def enrich_pareto(result: dict) -> dict:
+    """Attach an explicit empirical non-dominance partition to Pareto evidence."""
+    enriched=dict(result)
+    partition=pareto_partition(result.get("physical_points",[]))
+    enriched["pareto"] = partition
+    enriched["claim_boundary"] = (
+        "Empirical Pareto partition over realized B4-selected receiver-level operating points only; "
+        "it is not a proof that unselected action configurations are globally dominated."
+    )
     return enriched

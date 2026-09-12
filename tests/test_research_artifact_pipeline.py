@@ -85,8 +85,8 @@ def test_submission_gate_accepts_calibration_shape():
                     "selected_action_disagreement_rate": 0.04,
                     "max_possible_wilson_lower_95": 0.9895,
                     "target_attainable_at_draw_count": True,
-                    "minimum_successes_to_accept": 251,
-                    "minimum_empirical_success_fraction_to_accept": 251 / 256,
+                    "minimum_successes_to_accept": 249,
+                    "minimum_empirical_success_fraction_to_accept": 249 / 256,
                 }
             },
             "finite_draw_attainability_note": "sample-size geometry is explicit",

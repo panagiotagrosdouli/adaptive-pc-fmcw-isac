@@ -28,7 +28,12 @@ def test_table_generator_emits_csv_and_latex_from_artifacts(tmp_path):
     }
     _write(root, "full-metrics", {"summary": {"B4_ROBUST_JOINT": metric}})
     _write(root, "reliability-calibration", {"summary": {"32": {
-        "n": 10, "false_feasible_rate": 0.0, "false_infeasible_rate": 0.1,
+        "n": 10,
+        "max_possible_wilson_lower_95": 0.922,
+        "target_attainable_at_draw_count": False,
+        "minimum_successes_to_accept": None,
+        "minimum_empirical_success_fraction_to_accept": None,
+        "false_feasible_rate": 0.0, "false_infeasible_rate": 0.1,
         "decision_disagreement_rate": 0.1, "selected_action_disagreement_rate": 0.2,
         "finite_selection_rate": 0.2, "reference_selection_rate": 0.3,
     }}})
@@ -91,6 +96,12 @@ def test_table_generator_emits_csv_and_latex_from_artifacts(tmp_path):
     tex = (out / "policy_comparison.tex").read_text()
     assert "\\begin{table*}" in tex
     assert "B4\\_ROBUST\\_JOINT" in tex
+    calibration_csv = (out / "reliability_calibration.csv").read_text()
+    assert "max_possible_wilson_lower_95" in calibration_csv
+    assert "target_attainable_at_draw_count" in calibration_csv
+    assert "False" in calibration_csv
+    calibration_tex = (out / "reliability_calibration.tex").read_text()
+    assert "target\\_attainable\\_at\\_draw\\_count" in calibration_tex
     pareto_csv = (out / "empirical_pareto.csv").read_text()
     assert "non_dominated" in pareto_csv
     assert "True" in pareto_csv

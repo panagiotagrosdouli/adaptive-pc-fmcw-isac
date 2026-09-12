@@ -1,2 +1,0 @@
-verified=true
-verified_on=2026-09-12

@@ -1,3 +1,0 @@
-Audit date: 2026-09-12
-Verification classes: IEEE publisher metadata; TU Delft institutional publication records; NIST/PubMed metadata; Texas Instruments reference-design documentation.
-Purpose: submission-facing bibliography authenticity, relevance, and claim-scope verification.

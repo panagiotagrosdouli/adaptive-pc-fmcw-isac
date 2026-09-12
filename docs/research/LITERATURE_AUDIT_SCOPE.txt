@@ -1,2 +1,0 @@
-scope=current manuscript claims and directly cited prior art
-exhaustive_systematic_review=false

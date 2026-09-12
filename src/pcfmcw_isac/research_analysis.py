@@ -90,6 +90,7 @@ PARETO_OBJECTIVES = {
     "mean_effective_rate_bps": "maximize",
     "tx_power_fraction": "minimize",
     "repetition_factor": "minimize",
+    "chips_per_chirp": "minimize",
     "profile_adc_samples_per_frame": "minimize",
     "mean_range_rmse_m": "minimize",
     "mean_velocity_rmse_mps": "minimize",

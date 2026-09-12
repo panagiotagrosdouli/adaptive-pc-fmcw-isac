@@ -1,7 +1,7 @@
 % Final Results and Discussion narrative for publication v2.1.
 % Evidence basis:
 % - frozen main benchmark: GitHub Actions run 33967030983
-% - supplemental reviewer evidence: GitHub Actions run 33975266575
+% - reviewer-grade supplemental evidence: GitHub Actions run 34696063382
 % All numerical values are simulation/analytical outputs, not hardware measurements.
 
 \section{Results and Discussion}
@@ -49,14 +49,18 @@ The reported resource analysis separates physical decision variables from the ex
 
 The broader implication is that robust reliability is not obtained for free. B4 sacrifices operating-region availability and, for some selected states, requires a more conservative resource allocation than deterministic adaptation. The correct comparison is therefore multi-objective: reliability, availability, effective rate, sensing accuracy, and physical resource usage must be considered jointly rather than collapsed into a single unconditional-success metric.
 
-\subsection{Runtime and implementation limitation}
+\subsection{Finite-draw calibration and runtime limitation}
 
-The current Python reference implementation is not yet a real-time vehicular controller at the frozen B4 setting. Median B3 decision latency is approximately 0.44~ms. B4 scales approximately linearly with the number of uncertainty draws: 30.71~ms at 64 draws, 61.03~ms at 128, 121.36~ms at 256, and 240.44~ms at 512. These are prototype timings on the GitHub Actions execution platform, not embedded-target measurements.
+The reviewer-grade supplemental run explicitly calibrates the finite Monte-Carlo decision rule used by B4 against a 4096-draw reference. At 32 robust draws the declared confidence target is not attainable under the acceptance rule. At 64, 128, 256, and 512 draws the observed decision-disagreement rates are 0.583\%, 0.333\%, 0.083\%, and 0\%, respectively, on the tested calibration bank. These are empirical finite-bank calibration results, not mathematical guarantees that disagreement is zero outside the evaluated state distribution.
 
-Accordingly, no real-time deployment claim is made for the 512-draw implementation. The timing result instead motivates algorithmic optimization through action pruning after the physical gate, vectorized uncertainty evaluation, parallel sampling, cached surrogate models, and reduced-draw or sequential confidence tests. The physical gate is especially useful here because it can remove impossible candidates before the expensive robust reliability evaluation.
+The same supplemental run confirms that the current Python reference implementation is not a real-time vehicular controller at the frozen 256-draw B4 setting. B4 median decision latency increases from 36.29~ms at 64 draws to 70.47~ms at 128 draws, 138.89~ms at 256 draws, and 272.81~ms at 512 draws; the corresponding 95th-percentile latencies are 73.03, 142.13, 279.71, and 549.16~ms. These are prototype timings on GitHub Actions infrastructure, not embedded-target measurements.
+
+Accordingly, no hard real-time deployment claim is made. The timing result instead motivates algorithmic optimization through action pruning after the physical gate, vectorized uncertainty evaluation, parallel sampling, cached surrogate models, and reduced-draw or sequential confidence tests. The physical gate is especially useful here because it can remove impossible candidates before the expensive robust reliability evaluation.
 
 \subsection{Overall interpretation and claim boundary}
 
 Taken together, the frozen and supplemental evidence supports a narrower and more defensible conclusion than an unconditional-superiority narrative. Robust physics-gated PC-FMCW adaptation identifies a conservative subset of the high-mobility operating space in which selected actions achieve substantially higher conditional joint sensing--communication reliability under state uncertainty and several forms of moderate model mismatch. This gain is purchased by a pronounced reduction in availability and by higher computational cost.
 
-The evidence does not support the claims that B4 maximizes unconditional joint QoS, remains reliable under arbitrary SNR or interference mismatch, or is already real-time at 512 uncertainty draws. All reported numerical results are simulation or analytical evidence; none are hardware measurements. The principal contribution is therefore the explicit characterization of the physically feasible and statistically reliable operating region, together with the demonstrated reliability--availability--complexity trade-off induced by robust PC-FMCW PHY adaptation.
+The supplemental full-metric bank independently reproduces the same direction of effect: B4 selects 12.50\% of 1,200 paired states with 100\% observed conditional joint QoS and a 98.23\% Wilson lower bound, whereas B3 selects 20.00\% with 80.83\% conditional joint QoS. However, B4 has lower unconditional joint QoS than B3 by $-0.03667$, with a 95\% paired-bootstrap interval of $[-0.04833,-0.02583]$. Distribution-shift banks likewise retain negative B4--B3 unconditional differences, so universal or unconditional superiority is explicitly rejected.
+
+The evidence does not support the claims that B4 maximizes unconditional joint QoS, remains reliable under arbitrary SNR or interference mismatch, provides global Pareto optimality outside realized selected operating points, or is already real-time. All reported numerical results are simulation or analytical evidence; none are hardware measurements. The principal contribution is therefore the explicit characterization of the physically feasible and statistically reliable operating region, together with the demonstrated reliability--availability--complexity trade-off induced by robust PC-FMCW PHY adaptation.

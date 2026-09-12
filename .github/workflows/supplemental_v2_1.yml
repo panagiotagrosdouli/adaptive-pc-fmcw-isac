@@ -5,6 +5,14 @@ on:
   push:
     paths:
       - '.github/supplemental-v2-1.trigger'
+      - 'src/pcfmcw_isac/if_model.py'
+      - 'src/pcfmcw_isac/profiles.py'
+      - 'src/pcfmcw_isac/profile_selection.py'
+      - 'src/pcfmcw_isac/publication_protocol.py'
+      - 'src/pcfmcw_isac/policy_evaluation.py'
+      - 'src/pcfmcw_isac/policy_v2_1.py'
+      - 'src/pcfmcw_isac/publication_benchmark.py'
+      - 'src/pcfmcw_isac/publication_benchmark_v2.py'
       - 'src/pcfmcw_isac/part_b_completion.py'
       - 'src/pcfmcw_isac/supplemental_evidence_v2_1.py'
       - 'src/pcfmcw_isac/research_extensions.py'

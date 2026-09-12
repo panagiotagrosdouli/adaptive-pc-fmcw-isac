@@ -14,6 +14,7 @@ on:
       - 'scripts/check_research_submission_gate.py'
       - 'scripts/generate_supplemental_v2_1_figures.py'
       - 'scripts/generate_research_tables.py'
+      - 'scripts/summarize_research_evidence.py'
       - '.github/workflows/supplemental_v2_1.yml'
 
 concurrency:
@@ -97,6 +98,8 @@ jobs:
           find artifacts/research -maxdepth 1 -type f -name '*.json' -printf '%f\n' | sort
       - name: Enforce fail-closed submission evidence gate
         run: python scripts/check_research_submission_gate.py --input-dir artifacts/research --output artifacts/research/submission-gate.json
+      - name: Derive conservative scientific verdict
+        run: python scripts/summarize_research_evidence.py --input-dir artifacts/research --output artifacts/research/scientific-verdict.json --bootstrap-resamples 10000
       - name: Generate artifact-driven figures
         run: python scripts/generate_supplemental_v2_1_figures.py --input-dir artifacts/research --output-dir artifacts/research/figures
       - name: Generate artifact-driven tables

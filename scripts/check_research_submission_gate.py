@@ -54,9 +54,18 @@ def validate_artifact(name: str, payload: dict) -> list[str]:
             _require(b4.get("wilson_lower_95_conditional") is not None,f"{name}: B4 conditional Wilson bound missing",errors)
     elif name=="reliability-calibration":
         summary=results.get("summary",{}); _require(bool(summary),f"{name}: empty calibration summary",errors)
+        _require("finite_draw_attainability_note" in results,f"{name}: missing finite-draw attainability note",errors)
         for draws,row in summary.items():
             for key in ("false_feasible_rate","false_infeasible_rate","decision_disagreement_rate","selected_action_disagreement_rate"):
                 val=row.get(key); _require(isinstance(val,(int,float)) and 0.0<=val<=1.0,f"{name}: invalid {key} at draws={draws}",errors)
+            max_lower=row.get("max_possible_wilson_lower_95")
+            _require(isinstance(max_lower,(int,float)) and 0.0<=max_lower<=1.0,f"{name}: invalid max_possible_wilson_lower_95 at draws={draws}",errors)
+            _require(isinstance(row.get("target_attainable_at_draw_count"),bool),f"{name}: missing target attainability flag at draws={draws}",errors)
+            min_success=row.get("minimum_successes_to_accept")
+            if row.get("target_attainable_at_draw_count"):
+                _require(isinstance(min_success,int) and 0<=min_success<=int(draws),f"{name}: invalid minimum_successes_to_accept at draws={draws}",errors)
+            else:
+                _require(min_success is None,f"{name}: unattainable draw count must not report an acceptance success count at draws={draws}",errors)
     elif name=="action-space":
         summary=results.get("summary",{})
         for variant in ("FULL","HIGH_MOBILITY_PROFILE_ONLY","PARKING_PROFILE_ONLY","NO_REPETITION","FIXED_32_CHIPS","NO_POWER_BACKOFF"):

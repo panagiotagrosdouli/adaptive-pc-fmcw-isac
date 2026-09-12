@@ -22,7 +22,7 @@ from pcfmcw_isac.research_extensions import (
 )
 from pcfmcw_isac.research_sensitivity import run_qos_threshold_sensitivity
 from pcfmcw_isac.research_analysis import (
-    enrich_distribution_shift, enrich_physics_map, failure_taxonomy,
+    enrich_distribution_shift, enrich_pareto, enrich_physics_map, failure_taxonomy,
 )
 
 
@@ -62,7 +62,7 @@ def main() -> None:
     common = dict(seeds=seeds, comm_bits=args.comm_bits, sensing_trials=args.sensing_trials, robust_draws=args.robust_draws)
     runners = {
         "same-seed": run_same_seed_policy_check, "uncertainty": run_uncertainty_sweep,
-        "stress": run_impairment_stress, "pareto": run_physical_pareto,
+        "stress": run_impairment_stress,
         "ablations": run_extended_ablations, "mismatch": run_model_mismatch,
         "full-metrics": run_full_metric_table, "reliability-targets": run_reliability_target_sweep,
         "confidence-maps": run_confidence_maps, "uncertainty-sources": run_uncertainty_source_ablations,
@@ -70,6 +70,8 @@ def main() -> None:
     }
     if args.experiment == "physics":
         payload = enrich_physics_map(run_physics_only_maps())
+    elif args.experiment == "pareto":
+        payload = enrich_pareto(run_physical_pareto(**common))
     elif args.experiment == "runtime":
         payload = run_runtime_benchmark(seeds=seeds)
     elif args.experiment == "reliability-calibration":
@@ -82,6 +84,7 @@ def main() -> None:
         smoke_seeds = range(args.seed_start, args.seed_start + min(args.n_seeds, 2))
         smoke_common = dict(seeds=smoke_seeds, comm_bits=min(args.comm_bits,1000), sensing_trials=1, robust_draws=min(args.robust_draws,32))
         payload = {name: _attach_generic_failure_taxonomy(fn(**smoke_common)) for name, fn in runners.items()}
+        payload["pareto"] = enrich_pareto(run_physical_pareto(**smoke_common))
         payload["distribution-shift"] = enrich_distribution_shift(run_distribution_shift(**smoke_common, truth_draws_per_state=1), n_resamples=min(args.bootstrap_resamples, 200))
         payload["reliability-calibration"] = run_reliability_calibration(seeds=smoke_seeds, robust_draws_values=(16,32), reference_draws=min(args.reference_draws,128), target=0.95)
         payload["physics"] = enrich_physics_map(run_physics_only_maps())

@@ -11,6 +11,9 @@ on:
       - 'src/pcfmcw_isac/research_analysis.py'
       - 'src/pcfmcw_isac/research_sensitivity.py'
       - 'scripts/run_supplemental_v2_1.py'
+      - 'scripts/check_research_submission_gate.py'
+      - 'scripts/generate_supplemental_v2_1_figures.py'
+      - 'scripts/generate_research_tables.py'
       - '.github/workflows/supplemental_v2_1.yml'
 
 concurrency:
@@ -50,6 +53,7 @@ jobs:
         with:
           name: supplemental-v2-1-${{ matrix.experiment }}-${{ github.sha }}-${{ github.run_id }}
           path: artifacts/supplemental/${{ matrix.experiment }}.json
+          if-no-files-found: error
           retention-days: 90
 
   smoke:
@@ -66,4 +70,62 @@ jobs:
         with:
           name: supplemental-v2-1-smoke-${{ github.sha }}-${{ github.run_id }}
           path: artifacts/supplemental/all_smoke.json
+          if-no-files-found: error
+          retention-days: 90
+
+  aggregate:
+    needs: [supplemental, smoke]
+    if: ${{ always() && needs.supplemental.result == 'success' && needs.smoke.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m pip install -e .[all]
+      - name: Download experiment artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: supplemental-v2-1-*-${{ github.sha }}-${{ github.run_id }}
+          path: downloaded-artifacts
+          merge-multiple: true
+      - name: Assemble machine-readable research evidence
+        run: |
+          mkdir -p artifacts/research
+          find downloaded-artifacts -type f -name '*.json' -print -exec cp {} artifacts/research/ \;
+          echo 'Collected research artifacts:'
+          find artifacts/research -maxdepth 1 -type f -name '*.json' -printf '%f\n' | sort
+      - name: Enforce fail-closed submission evidence gate
+        run: python scripts/check_research_submission_gate.py --input-dir artifacts/research --output artifacts/research/submission-gate.json
+      - name: Generate artifact-driven figures
+        run: python scripts/generate_supplemental_v2_1_figures.py --input-dir artifacts/research --output-dir artifacts/research/figures
+      - name: Generate artifact-driven tables
+        run: python scripts/generate_research_tables.py --input-dir artifacts/research --output-dir artifacts/research/tables
+      - name: Build evidence manifest
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root = Path('artifacts/research')
+          files = []
+          for path in sorted(p for p in root.rglob('*') if p.is_file()):
+              files.append({
+                  'path': str(path.relative_to(root)),
+                  'bytes': path.stat().st_size,
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+              })
+          manifest = {
+              'evidence_class': 'SUPPLEMENTAL_PUBLICATION_V2_1_SIMULATION_NOT_HARDWARE_MEASUREMENT',
+              'git_sha': '${{ github.sha }}',
+              'github_run_id': '${{ github.run_id }}',
+              'files': files,
+          }
+          (root / 'manifest.json').write_text(json.dumps(manifest, indent=2))
+          PY
+      - name: Upload complete research evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-evidence-bundle-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/research
+          if-no-files-found: error
           retention-days: 90

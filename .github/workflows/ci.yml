@@ -20,11 +20,13 @@ jobs:
       - run: python -m pip install -e .[dev]
       - run: pytest -q
       - name: Export frozen submission action space
-        run: python scripts/export_submission_action_space.py --output artifacts/ci/action_space.csv
+        run: python scripts/export_submission_action_space.py --output artifacts/publication/submission/action_space.csv
       - name: Validate 54-action export
-        run: test "$(($(wc -l < artifacts/ci/action_space.csv)-1))" -eq 54
+        run: test "$(($(wc -l < artifacts/publication/submission/action_space.csv)-1))" -eq 54
       - name: Build submission provenance manifest
-        run: python scripts/build_submission_manifest.py --commit "${GITHUB_SHA}" --output artifacts/ci/submission-manifest.json
+        run: python scripts/build_submission_manifest.py --commit "${GITHUB_SHA}" --output artifacts/publication/submission/manifest.json
+      - name: Full repository scientific/submission audit
+        run: python scripts/audit_repository.py
       - name: Stage 7 validation smoke test
         run: python scripts/run_stage7_validation.py --sensing-trials 1 --high-mobility-trials 1 --comm-bits 2000 --output artifacts/ci/stage7_smoke.json
       - name: E1-E5 executable validation smoke test
@@ -40,5 +42,7 @@ jobs:
           path: |
             artifacts/ci/*.json
             artifacts/ci/*.csv
+            artifacts/publication/submission/*.json
+            artifacts/publication/submission/*.csv
           if-no-files-found: error
           retention-days: 30

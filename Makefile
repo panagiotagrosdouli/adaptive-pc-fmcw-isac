@@ -9,7 +9,7 @@ ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper submission-artifacts submission-check
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper submission-artifacts repo-audit submission-check
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -89,7 +89,11 @@ submission-artifacts:
 	$(PYTHON) scripts/export_submission_action_space.py --output artifacts/publication/submission/action_space.csv
 	$(PYTHON) scripts/build_submission_manifest.py --output artifacts/publication/submission/manifest.json
 
+repo-audit:
+	$(PYTHON) scripts/audit_repository.py
+
 submission-check:
 	$(MAKE) test
 	$(MAKE) submission-artifacts
+	$(MAKE) repo-audit
 	$(MAKE) paper

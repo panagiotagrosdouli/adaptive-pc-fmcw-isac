@@ -1,0 +1,56 @@
+name: Paper 1 IEEE LaTeX
+
+on:
+  pull_request:
+    paths:
+      - 'paper/paper1_*.tex'
+      - 'paper/paper1_*.bib'
+      - '.github/workflows/paper1_latex.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'paper/paper1_*.tex'
+      - 'paper/paper1_*.bib'
+      - '.github/workflows/paper1_latex.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: paper1-latex-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  build-paper1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers
+      - name: Build Paper 1
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error paper1_ieee.tex
+      - name: Check references and labels
+        working-directory: paper
+        run: |
+          set -euo pipefail
+          ! grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations|multiply defined" paper1_ieee.log
+      - name: Record paper identity
+        working-directory: paper
+        run: |
+          printf 'Paper 1\nPhysics-Aware Configuration Selection for Phase-Coded FMCW Integrated Sensing and Communication in High-Mobility Vehicular Links\nCommit: %s\n' "$GITHUB_SHA" > PAPER1_BUILD_INFO.txt
+      - name: Upload Paper 1 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper1-ieee-build
+          if-no-files-found: error
+          path: |
+            paper/paper1_ieee.pdf
+            paper/paper1_ieee.log
+            paper/PAPER1_BUILD_INFO.txt
+            paper/paper1_ieee.tex
+            paper/paper1_figures.tex
+            paper/paper1_references.bib
+            paper/PAPER1_README.md
+            paper/PAPER1_CLAIM_AUDIT.md

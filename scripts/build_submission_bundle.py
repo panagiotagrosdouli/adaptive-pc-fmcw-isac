@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Build a deterministic, reviewer-facing submission/reproducibility ZIP.
 
-The bundle intentionally contains publication-facing material and frozen evidence,
-not the entire Git repository. Source-code provenance remains the Git commit named
-in the generated submission manifest.
+Every repository file listed in the SHA-256 submission manifest is included in
+the ZIP. The bundle additionally carries the compiled manuscript PDF and the
+complete frozen publication-v2.1 evidence tree. This keeps the manifest and the
+archive self-consistent while preserving the Git commit as source provenance.
 """
 from __future__ import annotations
 
@@ -13,47 +14,52 @@ import zipfile
 from pathlib import Path
 
 FIXED_ZIP_TIME = (2026, 1, 1, 0, 0, 0)
-
-EXPLICIT_PATHS = (
-    "README.md",
-    "Makefile",
-    "pyproject.toml",
-    "configs/paper_protocol_v2_1.json",
-    "artifacts/publication/submission/action_space.csv",
-    "artifacts/publication/submission/manifest.json",
+MANIFEST_REL = "artifacts/publication/submission/manifest.json"
+ADDITIONAL_FILES = (
     "paper/manuscript_v2_1.pdf",
-    "paper/manuscript_v2_1.tex",
-    "paper/references_v2_1.bib",
-    "paper/references_submission.bib",
-    "paper/SUBMISSION_SOURCE_MANIFEST.txt",
-    "paper/SOURCE_TO_CLAIM_TRACEABILITY.md",
-    "paper/FIGURE_PROVENANCE.md",
-    "paper/CLAIM_AUDIT.md",
-    "paper/REVIEWER_DEFENSE.md",
-    "paper/EXCLUDED_UNVERIFIED_CLAIMS.md",
-    "paper/SUBMISSION_CHECKLIST.md",
-    "docs/EVIDENCE_MAP.md",
-    "docs/EQUATION_TO_CODE_AUDIT.md",
-    "docs/POLICY_DEFINITIONS.md",
-    "docs/REPRODUCIBILITY.md",
-    "docs/SUBMISSION_CHANGELOG.md",
-    "docs/SUBMISSION_V2_1_RELEASE.md",
 )
-
 TREE_ROOTS = (
     "artifacts/publication/v2_1",
 )
 
 
-def _collect(root: Path) -> list[Path]:
-    paths: set[Path] = set()
+def _load_manifest(root: Path) -> tuple[dict, str]:
+    manifest_path = root / MANIFEST_REL
+    if not manifest_path.is_file():
+        raise SystemExit(f"missing submission manifest: {MANIFEST_REL}")
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    commit = str(data.get("submission_commit", "")).strip()
+    if not commit or commit == "UNKNOWN":
+        raise SystemExit("submission manifest has no immutable submission_commit")
+    if data.get("frozen_scientific_baseline") != "3904c4c2a69c4af96751d64614f7228ddea24b56":
+        raise SystemExit("submission manifest frozen baseline does not match publication-v2.1 baseline")
+    files = data.get("files")
+    if not isinstance(files, list) or not files:
+        raise SystemExit("submission manifest has no file records")
+    return data, commit
+
+
+def _collect(root: Path, manifest: dict) -> list[Path]:
+    paths: set[Path] = {root / MANIFEST_REL}
     missing: list[str] = []
-    for rel in EXPLICIT_PATHS:
+
+    for record in manifest["files"]:
+        rel = str(record.get("path", "")).strip()
+        if not rel or rel.startswith("/") or ".." in Path(rel).parts:
+            raise SystemExit(f"unsafe/invalid manifest path: {rel!r}")
         p = root / rel
         if not p.is_file():
             missing.append(rel)
         else:
             paths.add(p)
+
+    for rel in ADDITIONAL_FILES:
+        p = root / rel
+        if not p.is_file():
+            missing.append(rel)
+        else:
+            paths.add(p)
+
     for rel in TREE_ROOTS:
         p = root / rel
         if not p.is_dir():
@@ -62,20 +68,10 @@ def _collect(root: Path) -> list[Path]:
         for child in p.rglob("*"):
             if child.is_file():
                 paths.add(child)
+
     if missing:
-        raise SystemExit("missing required submission bundle inputs: " + ", ".join(missing))
+        raise SystemExit("missing required submission bundle inputs: " + ", ".join(sorted(set(missing))))
     return sorted(paths, key=lambda p: p.relative_to(root).as_posix())
-
-
-def _validate_manifest(root: Path) -> str:
-    manifest_path = root / "artifacts/publication/submission/manifest.json"
-    data = json.loads(manifest_path.read_text(encoding="utf-8"))
-    commit = str(data.get("submission_commit", "")).strip()
-    if not commit or commit == "UNKNOWN":
-        raise SystemExit("submission manifest has no immutable submission_commit")
-    if data.get("frozen_scientific_baseline") != "3904c4c2a69c4af96751d64614f7228ddea24b56":
-        raise SystemExit("submission manifest frozen baseline does not match publication-v2.1 baseline")
-    return commit
 
 
 def _write_member(zf: zipfile.ZipFile, root: Path, path: Path) -> None:
@@ -93,8 +89,8 @@ def main() -> None:
     args = p.parse_args()
 
     root = Path(args.root).resolve()
-    commit = _validate_manifest(root)
-    inputs = _collect(root)
+    manifest, commit = _load_manifest(root)
+    inputs = _collect(root, manifest)
     output = root / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
 

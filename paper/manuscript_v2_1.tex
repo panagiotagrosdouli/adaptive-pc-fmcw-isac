@@ -7,11 +7,17 @@
 \usepackage{url}
 \usepackage{siunitx}
 \usepackage{multirow}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows.meta,positioning}
+\pgfplotsset{compat=1.18}
 
 \title{Physics-Gated Reliability-Constrained Adaptive Phase-Coded FMCW ISAC for High-Mobility Vehicular Links}
 
 \author{Anonymous Author(s)%
 \thanks{Manuscript prepared from the frozen publication-v2.1 simulation study and reviewer-grade supplemental evidence. Author names and affiliations are intentionally left for submission-time insertion.}}
+
+\input{figures_submission}
 
 \begin{document}
 \maketitle
@@ -29,6 +35,8 @@ Integrated sensing and communication (ISAC) seeks to share waveform, spectrum, a
 High mobility also makes reliability under uncertain link state a first-order concern. Robust V2X resource-allocation work has shown that imperfect channel knowledge and heterogeneous QoS requirements motivate explicit chance-constrained or distributionally robust treatment rather than deterministic optimization alone \cite{wu2021robustv2x}. Recent robust ISAC work similarly treats imperfect communication CSI and uncertain target location as coupled design uncertainties \cite{lyu2024dualrobust}. A 2026 survey of vehicular ISAC identifies robustness to imperfect modeling and hardware non-idealities, scalable real-time control, and prototype/field validation among the key obstacles to practical deployment \cite{ma2026vehicularisac}. The present problem differs in control variable and evidence target: instead of optimizing a continuous beamformer or allocating network resources across users, we adapt a finite PC-FMCW waveform/PHY action while simultaneously enforcing deterministic waveform feasibility and joint sensing--communication reliability.
 
 This paper therefore moves the research question from fixed-configuration feasibility to reliable adaptive operation. We study an RF/mmWave \SI{77}{GHz} vehicular PC-FMCW physical layer and ask which configuration should be selected, given imperfect knowledge of the link and sensing state, so that communication and sensing QoS are jointly supported with a declared reliability while physical resources remain controlled. The design uses two ordered stages. A PC-FMCW-specific physical feasibility gate first removes configurations that violate sampling, range, or unambiguous-velocity limits. A robust reliability selector then chooses the minimum-cost admissible action satisfying joint communication and sensing constraints under an uncertainty distribution.
+
+\figSystemArchitecture
 
 The main contributions are as follows:
 \begin{itemize}
@@ -55,6 +63,8 @@ Vehicular ISAC is moving toward standardization and deployment-oriented study. 3
 The closest conceptual predecessor to the broader vehicular integration theme is the phase-coded FMCW laser-headlamp ISCAI architecture \cite{liu2026laserheadlamp}. That system addresses optical sensing, communication, and adaptive illumination. The present work is independent in both medium and optimization objective: it studies a \SI{77}{GHz} RF/mmWave PC-FMCW PHY and adapts the physical-layer configuration under high-mobility uncertainty. The unit of control is neither the vehicle trajectory nor a packet queue, beam, or illumination pattern.
 
 The distinguishing question is therefore not whether PC-FMCW can support sensing and communication, nor whether robust optimization can be used in isolation, but where a physically admissible PC-FMCW configuration can jointly support both functions at a declared reliability under mobility-related uncertainty. This motivates a two-layer formulation in which deterministic waveform physics is enforced before stochastic reliability qualification.
+
+\input{literature_positioning}
 
 \section{System Model}
 \label{sec:system}
@@ -145,9 +155,15 @@ Primary results are frozen separately from reviewer-grade supplemental evidence.
 
 All numerical outputs in this paper are controlled simulation, analytical, statistical, or host-runtime evidence. Literature-grounded hardware constants and externally reported measurements are retained as provenance and are not represented as measurements produced by this work.
 
+\figFrozenPolicies
+
 \input{results_v2_1_tables}
 \input{supplemental_v2_1_tables}
 \input{final_results_discussion}
+
+\figUncertaintyTradeoff
+\figFiniteDrawCalibration
+\figRuntimeScaling
 
 \section{Reproducibility and Claim Boundaries}
 \label{sec:reproducibility}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repository-wide scientific/submission consistency audit.
 
-This gate is intentionally broader than unit tests.  It checks machine-readable
+This gate is intentionally broader than unit tests. It checks machine-readable
 artifacts, frozen protocol invariants, code/config profile agreement, manuscript
 source/citation integrity, and selected claim-boundary regressions.
 """
@@ -95,7 +95,7 @@ def audit_profiles_and_actions() -> None:
             lhs = cfg[field]
             rhs = getattr(profile, field)
             if isinstance(lhs, float) or isinstance(rhs, float):
-                require(math.isclose(float(lhs), float(rhs), rel_tol=0.0, abs_tol=max(1e-15, abs(float(lhs))*1e-12)), f"{path.name}: code/config drift in {field}")
+                require(math.isclose(float(lhs), float(rhs), rel_tol=0.0, abs_tol=max(1e-15, abs(float(lhs)) * 1e-12)), f"{path.name}: code/config drift in {field}")
             else:
                 require(lhs == rhs, f"{path.name}: code/config drift in {field}")
 
@@ -159,18 +159,20 @@ def audit_manuscript_and_bibliography() -> None:
         "B3_DETERMINISTIC_JOINT": "B3 DETERMINISTIC JOINT", "B4_ROBUST_JOINT": "B4 ROBUST JOINT", "ORACLE": "ORACLE",
     }.items():
         row = results["aggregate"][policy]
-        expected = f"{label} & {100*row['selection_rate']:.2f} & {100*row['joint_qos_probability_unconditional']:.2f} & {100*row['joint_qos_probability_conditional_on_selection']:.2f}"
+        expected = f"{label} & {100 * row['selection_rate']:.2f} & {100 * row['joint_qos_probability_unconditional']:.2f} & {100 * row['joint_qos_probability_conditional_on_selection']:.2f}"
         require(expected in table, f"paper results table drift for {policy}")
 
 
 def audit_repo_text_hygiene() -> None:
+    # Construct unfinished-work markers so this audit does not match its own source.
+    markers = ("TO" + "DO", "FIX" + "ME")
     for path in sorted(ROOT.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in {".py", ".md", ".tex", ".yml", ".yaml", ".toml"}:
             continue
         if any(part in {".git", ".venv", "venv", "build", "dist"} for part in path.parts):
             continue
         text = path.read_text(encoding="utf-8", errors="strict")
-        for marker in ("TODO", "FIXME"):
+        for marker in markers:
             require(marker not in text, f"unfinished marker {marker} in {path.relative_to(ROOT)}")
 
 

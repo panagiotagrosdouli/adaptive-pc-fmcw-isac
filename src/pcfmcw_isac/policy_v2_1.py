@@ -1,6 +1,6 @@
 """Publication-v2.1 policy semantics and research extensions.
 
-The frozen v2.1 policy is preserved by default.  Research experiments may use
+The frozen v2.1 policy is preserved by default. Research experiments may use
 an explicit calibrated robust mode that trades statistical confidence against
 availability; this is supplemental evidence and must not be substituted into
 the frozen benchmark silently.
@@ -142,15 +142,44 @@ def select_action_v2_1(policy: str, true_state: EvaluationState, *, robust_draws
     return min(candidates, key=lambda item: (normalized_resource_cost(item[0]), -item[1], item[0].profile_name, item[0].chips_per_chirp, item[0].repetition_factor))[0]
 
 
+def _physics_context(policy: str, state: EvaluationState) -> tuple[bool, str]:
+    """Return whether the policy had any physically feasible action to consider.
+
+    Deployable policies gate on the estimated state; the hindsight Oracle gates
+    on the true state.  This context separates hard physical infeasibility from
+    policy abstention without changing legacy result fields.
+    """
+    actions = FROZEN_PROTOCOL_V1.actions()
+    reference_state = state if policy == "ORACLE" else _estimated_state(state, state.state_uncertainty_scale)
+    feasible = filter_physics_feasible_actions(actions, profile_registry(), reference_state)
+    return bool(feasible), "TRUE_STATE" if policy == "ORACLE" else "ESTIMATED_STATE"
+
+
 def evaluate_policy_v2_1(policy: str, state: EvaluationState, *, comm_bits: int = 20_000, sensing_trials: int = 3, robust_draws: int = 512, reliability_confidence: float = 0.95, reliability_target: float | None = None) -> dict:
     action = select_action_v2_1(policy, state, robust_draws=robust_draws, reliability_confidence=reliability_confidence, reliability_target=reliability_target, oracle_comm_bits=comm_bits, oracle_sensing_trials=sensing_trials)
+    any_physics, physics_reference = _physics_context(policy, state)
+    semantics = "publication_v2_1_research_extension" if reliability_target is not None or policy == "B4_CALIBRATED_ROBUST" else "publication_v2_1"
     if action is None:
-        return {"policy": policy, "selected_action": None, "physics_feasible": False, "joint_qos": False, "outage": True, "protocol_semantics": "publication_v2_1_research_extension" if reliability_target is not None or policy == "B4_CALIBRATED_ROBUST" else "publication_v2_1"}
+        return {
+            "policy": policy,
+            "selected_action": None,
+            # Backward-compatible selected-action field: no selected action exists.
+            "physics_feasible": False,
+            "any_physics_feasible_action": any_physics,
+            "physics_gate_reference": physics_reference,
+            "selection_status": "ABSTAINED_POLICY" if any_physics else "NO_PHYSICS_FEASIBLE_ACTION",
+            "joint_qos": False,
+            "outage": True,
+            "protocol_semantics": semantics,
+        }
     metrics = evaluate_action(action, state, comm_bits=comm_bits, sensing_trials=sensing_trials)
     return {
         "policy": policy,
         "selected_action": {"profile_name": action.profile_name, "chips_per_chirp": action.chips_per_chirp, "tx_power_backoff_db": action.tx_power_backoff_db, "repetition_factor": action.repetition_factor},
         "physics_feasible": metrics.physics_feasible,
+        "any_physics_feasible_action": any_physics,
+        "physics_gate_reference": physics_reference,
+        "selection_status": "SELECTED",
         "ber": metrics.ber,
         "effective_rate_bps": metrics.effective_rate_bps,
         "range_rmse_m": metrics.range_error_m,
@@ -158,5 +187,5 @@ def evaluate_policy_v2_1(policy: str, state: EvaluationState, *, comm_bits: int 
         "joint_qos": metrics.joint_qos,
         "outage": not metrics.joint_qos,
         "normalized_resource_cost": metrics.normalized_resource_cost,
-        "protocol_semantics": "publication_v2_1_research_extension" if reliability_target is not None or policy == "B4_CALIBRATED_ROBUST" else "publication_v2_1",
+        "protocol_semantics": semantics,
     }

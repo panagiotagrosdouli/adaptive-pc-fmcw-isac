@@ -3,6 +3,7 @@
 \newcommand{\figSystemArchitecture}{%
 \begin{figure*}[t]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[font=\footnotesize, node distance=7mm and 8mm,
 box/.style={draw, rounded corners, align=center, minimum height=8mm, minimum width=27mm, fill=black!3},
 smallbox/.style={draw, rounded corners, align=center, minimum height=7mm, minimum width=24mm, fill=black!2},
@@ -22,7 +23,8 @@ arr/.style={-Latex, thick}]
 \draw[arr] (wilson) -- (select);
 \draw[arr] (select) -- (comm);
 \draw[arr] (select) -- (radar);
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Physics-gated reliability-constrained PC-FMCW adaptation. Hard range/velocity representability is checked before stochastic reliability qualification. B4 accepts an action only if the one-sided Wilson lower bound for the joint-QoS success event reaches the frozen reliability target; otherwise it abstains.}
 \label{fig:architecture}
 \end{figure*}}

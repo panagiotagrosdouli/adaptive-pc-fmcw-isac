@@ -14,7 +14,7 @@ from typing import Iterable
 import numpy as np
 
 from .policy_v2 import evaluate_policy_v2, select_action_v2
-from .policy_evaluation import normalized_resource_cost
+from .policy_evaluation import normalized_resource_cost, profile_registry
 from .publication_benchmark import benchmark_states, paired_bootstrap_difference
 from .publication_protocol import EvaluationState, FROZEN_PROTOCOL_V1, PhyActionSpec
 
@@ -29,8 +29,19 @@ POLICIES_V2 = (
 
 
 def physical_resource_vector(action: PhyActionSpec) -> dict:
-    """Report interpretable resource coordinates, not a claim of physical energy."""
-    profile_adc_samples = 256 * 64 if action.profile_name == "ti_77ghz_parking_profile" else 750 * 128
+    """Report interpretable resource coordinates, not a claim of physical energy.
+
+    Profile-dependent occupancy is derived from the same validated profile
+    registry used by the receiver/physics pipeline.  This avoids silent drift
+    between resource reporting and profile definitions.
+    """
+    profiles = profile_registry()
+    try:
+        profile = profiles[action.profile_name]
+    except KeyError as exc:
+        raise KeyError(f"missing profile {action.profile_name!r}") from exc
+    profile.validate()
+    profile_adc_samples = profile.samples_per_chirp * profile.n_chirps
     return {
         "tx_power_fraction": float(10.0 ** (-action.tx_power_backoff_db / 10.0)),
         "repetition_factor": int(action.repetition_factor),

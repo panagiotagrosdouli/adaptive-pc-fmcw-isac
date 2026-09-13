@@ -1,4 +1,4 @@
-from pcfmcw_isac.policy_v2_1 import _predict_metrics_v2_1, select_action_v2_1
+from pcfmcw_isac.policy_v2_1 import _predict_metrics_v2_1, evaluate_policy_v2_1, select_action_v2_1
 from pcfmcw_isac.publication_protocol import EvaluationState, PhyActionSpec
 
 
@@ -39,6 +39,21 @@ def test_comm_only_and_joint_no_longer_collapse_when_sensing_is_limiting():
     b3 = select_action_v2_1("B3_DETERMINISTIC_JOINT", state, robust_draws=64)
     assert b1 is not None
     assert b3 is None
+
+
+def test_abstention_is_not_reported_as_hard_physics_infeasibility():
+    out = evaluate_policy_v2_1("B3_DETERMINISTIC_JOINT", _state(), comm_bits=1000, sensing_trials=1)
+    assert out["selected_action"] is None
+    assert out["any_physics_feasible_action"] is True
+    assert out["selection_status"] == "ABSTAINED_POLICY"
+    assert out["physics_gate_reference"] == "ESTIMATED_STATE"
+
+
+def test_hard_physics_infeasibility_is_distinguished_from_abstention():
+    out = evaluate_policy_v2_1("B3_DETERMINISTIC_JOINT", _state(range_m=100.0), comm_bits=1000, sensing_trials=1)
+    assert out["selected_action"] is None
+    assert out["any_physics_feasible_action"] is False
+    assert out["selection_status"] == "NO_PHYSICS_FEASIBLE_ACTION"
 
 
 def test_oracle_remains_receiver_valid_on_easy_state():

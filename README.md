@@ -26,13 +26,7 @@ The publication-v2.1 scientific baseline is frozen at commit:
 3904c4c2a69c4af96751d64614f7228ddea24b56
 ```
 
-The submission-preparation branch is:
-
-```text
-paper/submission-ready
-```
-
-Frozen evidence under `artifacts/publication/v2_1/` is preserved. Post-freeze documentation/manuscript/test changes are recorded in [`docs/SUBMISSION_CHANGELOG.md`](docs/SUBMISSION_CHANGELOG.md).
+Submission-readiness work originally developed on `paper/submission-ready` was merged into `main` by PR #57. Frozen evidence under `artifacts/publication/v2_1/` remains preserved. Later audit/repair work must not rewrite that historical evidence family; post-freeze changes are recorded in [`docs/SUBMISSION_CHANGELOG.md`](docs/SUBMISSION_CHANGELOG.md).
 
 ## System model
 
@@ -217,7 +211,8 @@ paper/                    IEEEtran manuscript, tables and bibliography
 
 ```bash
 python -m pip install -e .[all]
-pytest -q
+make test
+make repo-audit
 ```
 
 Useful native targets include:
@@ -232,6 +227,10 @@ make figures
 make tables
 make paper-results
 make research-smoke
+make submission-artifacts
+make repo-audit
+make paper
+make submission-check
 ```
 
 See the `Makefile` before launching a full publication run; final and supplemental Monte-Carlo jobs are intentionally more expensive than smoke tests.
@@ -251,7 +250,13 @@ python -m pip install -e .[all]
 pytest -q
 ```
 
-3. Run lightweight validation using the repository-native smoke targets/workflows before expensive publication experiments.
+3. For the current audited repository state, run:
+
+```bash
+make submission-artifacts
+make repo-audit
+make submission-check
+```
 
 4. Inspect the frozen primary sources:
 
@@ -265,7 +270,7 @@ artifacts/publication/v2_1/PROVENANCE.json
 
 6. Build the manuscript from `paper/manuscript_v2_1.tex`. CI uses `latexmk` and fails on unresolved citations/references and multiply-defined labels.
 
-For the submission branch, see:
+Audit and reproducibility documents:
 
 - [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md)
 - [`docs/EVIDENCE_MAP.md`](docs/EVIDENCE_MAP.md)
@@ -292,4 +297,4 @@ Do not describe simulation output as measured automotive-link performance. Do no
 
 ## Submission-readiness rule
 
-A branch may be called submission-ready only after the complete test suite, scientific invariant tests, publication smoke gate, evidence/provenance checks, bibliography audit, IEEE LaTeX build, unresolved-reference audit, and final PDF inspection all pass. If any mandatory gate is incomplete, the repository status must remain **NOT YET SUBMISSION READY**.
+The repository may be called submission-ready only after the complete test suite, repository-wide scientific consistency audit, publication smoke gate, evidence/provenance checks, bibliography audit, IEEE LaTeX build, unresolved-reference audit, and final PDF inspection all pass. If any mandatory gate is incomplete, the repository status remains **NOT YET SUBMISSION READY**.

@@ -19,6 +19,10 @@ jobs:
           cache: pip
       - run: python -m pip install -e .[dev]
       - run: pytest -q
+      - name: Export frozen submission action space
+        run: python scripts/export_submission_action_space.py --output artifacts/ci/action_space.csv
+      - name: Validate 54-action export
+        run: test "$(($(wc -l < artifacts/ci/action_space.csv)-1))" -eq 54
       - name: Stage 7 validation smoke test
         run: python scripts/run_stage7_validation.py --sensing-trials 1 --high-mobility-trials 1 --comm-bits 2000 --output artifacts/ci/stage7_smoke.json
       - name: E1-E5 executable validation smoke test
@@ -31,6 +35,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: publication-smoke-${{ github.sha }}
-          path: artifacts/ci/*.json
+          path: |
+            artifacts/ci/*.json
+            artifacts/ci/*.csv
           if-no-files-found: error
           retention-days: 30

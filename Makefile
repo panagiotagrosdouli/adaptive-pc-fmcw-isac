@@ -1,4 +1,5 @@
 PYTHON ?= python3
+LATEXMK ?= latexmk
 ARTIFACT_DIR ?= artifacts/research
 SEED_START ?= 10000
 N_SEEDS ?= 100
@@ -8,7 +9,7 @@ ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper submission-check
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -80,3 +81,10 @@ paper-results: experiments gate verdict figures tables
 research-smoke:
 	$(MAKE) test
 	$(MAKE) pilot
+
+paper:
+	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error manuscript_v2_1.tex
+
+submission-check:
+	$(MAKE) test
+	$(MAKE) paper

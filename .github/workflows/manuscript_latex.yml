@@ -4,6 +4,20 @@ on:
   pull_request:
     paths:
       - 'paper/**'
+      - 'docs/SUBMISSION_V2_1_RELEASE.md'
+      - 'scripts/build_submission_bundle.py'
+      - 'scripts/build_submission_manifest.py'
+      - 'Makefile'
+      - '.github/workflows/manuscript_latex.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'paper/**'
+      - 'docs/SUBMISSION_V2_1_RELEASE.md'
+      - 'scripts/build_submission_bundle.py'
+      - 'scripts/build_submission_manifest.py'
+      - 'Makefile'
       - '.github/workflows/manuscript_latex.yml'
   workflow_dispatch:
 
@@ -19,6 +33,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install project
+        run: python -m pip install -e .[dev]
       - name: Validate submission source manifest
         working-directory: paper
         run: |
@@ -59,12 +79,41 @@ jobs:
         working-directory: paper
         run: |
           grep -E "Overfull \\hbox|Underfull \\hbox" manuscript_v2_1.log || true
-      - name: Upload compiled manuscript and log
+      - name: Export frozen submission action space
+        run: python scripts/export_submission_action_space.py --output artifacts/publication/submission/action_space.csv
+      - name: Build submission provenance manifest
+        run: python scripts/build_submission_manifest.py --commit "${GITHUB_SHA}" --output artifacts/publication/submission/manifest.json
+      - name: Build deterministic submission bundle
+        run: python scripts/build_submission_bundle.py --output artifacts/publication/submission/adaptive-pc-fmcw-isac-submission-v2.1.zip
+      - name: Validate submission bundle
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          p = Path('artifacts/publication/submission/adaptive-pc-fmcw-isac-submission-v2.1.zip')
+          assert p.is_file() and p.stat().st_size > 0
+          with zipfile.ZipFile(p) as zf:
+              bad = zf.testzip()
+              assert bad is None, f'corrupt ZIP member: {bad}'
+              names = set(zf.namelist())
+              for required in (
+                  'paper/manuscript_v2_1.pdf',
+                  'artifacts/publication/v2_1/FINAL_RESULTS.json',
+                  'artifacts/publication/submission/manifest.json',
+                  'SUBMISSION_COMMIT.txt',
+              ):
+                  assert required in names, f'missing bundle member: {required}'
+          print(f'validated {p} ({p.stat().st_size} bytes)')
+          PY
+      - name: Upload compiled manuscript, bundle, and log
         uses: actions/upload-artifact@v4
         with:
-          name: manuscript-v2-1-pdf
+          name: manuscript-v2-1-submission
           if-no-files-found: error
           path: |
             paper/manuscript_v2_1.pdf
             paper/manuscript_v2_1.log
             paper/SUBMISSION_SOURCE_MANIFEST.txt
+            artifacts/publication/submission/action_space.csv
+            artifacts/publication/submission/manifest.json
+            artifacts/publication/submission/adaptive-pc-fmcw-isac-submission-v2.1.zip

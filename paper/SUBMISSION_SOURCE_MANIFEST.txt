@@ -5,3 +5,4 @@ results_v2_1_tables.tex
 supplemental_v2_1_tables.tex
 final_results_discussion.tex
 references_v2_1.bib
+references_submission.bib

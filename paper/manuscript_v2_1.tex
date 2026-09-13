@@ -26,7 +26,7 @@ Integrated sensing and communication, phase-coded FMCW, automotive radar, robust
 \label{sec:introduction}
 Integrated sensing and communication (ISAC) seeks to share waveform, spectrum, and hardware resources between sensing and communication while exposing explicit performance trade-offs between the two functions \cite{liu2022isac,wang2022isac}. Phase-coded frequency-modulated continuous-wave (PC-FMCW) signaling is attractive in this setting because a common FMCW carrier can retain range--Doppler sensing structure while phase coding carries communication information. Prior PC-FMCW studies have demonstrated the sensing--communication principle experimentally, analyzed receiver-dependent sensing--communication trade-offs, and investigated interference resilience \cite{kumbul2021experimental,kumbul2023performance,kumbul2024interference}. The waveform family has also been developed through dedicated receiver-structure studies, smoothed phase-coded transceiver architectures, coherent MIMO operation, and code-dependent sensing analysis \cite{kumbul2022receiver,kumbul2022smoothed,kumbul2023mimo,kumbul2022codes}. More recently, phase-coded FMCW has been used in an optical laser-headlamp architecture that combines sensing, communication, and illumination \cite{liu2026laserheadlamp}. These results establish waveform and functional feasibility, but they do not resolve a different problem that appears in high-mobility vehicular operation: a configuration that is nominally attractive can be physically incapable of representing the requested range or radial velocity, or can violate communication and sensing QoS once state uncertainty, synchronization residuals, and interference are considered.
 
-High mobility also makes reliability under uncertain link state a first-order concern. Robust V2X resource-allocation work has shown that imperfect channel knowledge and heterogeneous QoS requirements motivate explicit chance-constrained or distributionally robust treatment rather than deterministic optimization alone \cite{wu2021robustv2x}. The present problem differs in both control variable and constraints: instead of allocating network resources across vehicular users, we adapt a finite PC-FMCW waveform/PHY action while simultaneously enforcing deterministic waveform feasibility and joint sensing--communication reliability.
+High mobility also makes reliability under uncertain link state a first-order concern. Robust V2X resource-allocation work has shown that imperfect channel knowledge and heterogeneous QoS requirements motivate explicit chance-constrained or distributionally robust treatment rather than deterministic optimization alone \cite{wu2021robustv2x}. Recent robust ISAC work similarly treats imperfect communication CSI and uncertain target location as coupled design uncertainties \cite{lyu2024dualrobust}. A 2026 survey of vehicular ISAC identifies robustness to imperfect modeling and hardware non-idealities, scalable real-time control, and prototype/field validation among the key obstacles to practical deployment \cite{ma2026vehicularisac}. The present problem differs in control variable and evidence target: instead of optimizing a continuous beamformer or allocating network resources across users, we adapt a finite PC-FMCW waveform/PHY action while simultaneously enforcing deterministic waveform feasibility and joint sensing--communication reliability.
 
 This paper therefore moves the research question from fixed-configuration feasibility to reliable adaptive operation. We study an RF/mmWave \SI{77}{GHz} vehicular PC-FMCW physical layer and ask which configuration should be selected, given imperfect knowledge of the link and sensing state, so that communication and sensing QoS are jointly supported with a declared reliability while physical resources remain controlled. The design uses two ordered stages. A PC-FMCW-specific physical feasibility gate first removes configurations that violate sampling, range, or unambiguous-velocity limits. A robust reliability selector then chooses the minimum-cost admissible action satisfying joint communication and sensing constraints under an uncertainty distribution.
 
@@ -35,8 +35,9 @@ The main contributions are as follows:
     \item A reproducible PC-FMCW system model that explicitly separates the one-way remote communication path from the two-way monostatic sensing echo and models radar sampling at dechirped IF rather than at the \SI{77}{GHz} carrier.
     \item A physics-gated finite-action adaptation framework based on waveform bandwidth, chirp slope, IF sampling, maximum range, chirp repetition interval, and unambiguous radial velocity.
     \item A reliability-constrained joint PHY selector over waveform profile, phase-code/chip budget, transmit-power backoff, and repetition resources under uncertain SNR, residual CFO/synchronization error, interference, and phase-noise state.
+    \item A finite-sample confidence rule in which an action is accepted only when a one-sided Wilson lower confidence bound reaches the declared joint-reliability target, together with calibration of the statistical and computational consequences of the draw budget.
     \item A feasible-operating-region evaluation that distinguishes hard physical infeasibility, policy abstention, and selected-action failure, rather than collapsing these outcomes into a single success rate.
-    \item A frozen paired Monte-Carlo comparison and reviewer-grade uncertainty, ablation, mismatch, Pareto, and runtime analysis demonstrating a reliability--availability--complexity trade-off instead of unconditional superiority.
+    \item A frozen paired Monte-Carlo comparison and reviewer-grade uncertainty, ablation, mismatch, Pareto, distribution-shift, and runtime analysis demonstrating a reliability--availability--complexity trade-off instead of unconditional superiority.
 \end{itemize}
 
 The scope is deliberately PHY-level. The work does not perform trajectory forecasting, ego-motion planning, packet/user scheduling, beam management, adaptive driving-beam illumination, or optical headlamp control.
@@ -45,11 +46,15 @@ The scope is deliberately PHY-level. The work does not perform trajectory foreca
 \label{sec:related}
 Broad ISAC surveys identify waveform design and the sensing--communication performance trade-off as central physical-layer design questions, with vehicular/V2X operation among the relevant application domains \cite{liu2022isac,wang2022isac}. Within the PC-FMCW family, experimental work established that phase coding can combine communication capability with FMCW-style sensing \cite{kumbul2021experimental}. Receiver-focused studies then analyzed practical low-sampling receiver structures and sensing/communication behavior, including the dependence of communication BER and sensing performance on the phase-modulation processing choice \cite{kumbul2022receiver,kumbul2023performance}. Smoothed PC-FMCW work further developed the waveform/transceiver architecture and evaluated it through simulation and experiments \cite{kumbul2022smoothed}. Related PC-FMCW research addresses coherent MIMO operation and code-dependent sensing behavior \cite{kumbul2023mimo,kumbul2022codes}, while separate work studies mitigation of mutual automotive-radar interference \cite{kumbul2024interference}. These contributions motivate the waveform family, sensing model, and impairment axes used here, but the present paper does not claim novelty for phase coding itself, DPSK embedding, range--Doppler processing, MIMO coding, receiver filtering, or generic joint sensing and communication.
 
-Robust optimization under mobility and uncertain CSI is also established in vehicular communications. For example, distributionally robust V2X resource allocation has been formulated around chance constraints to protect heterogeneous communication QoS under channel uncertainty \cite{wu2021robustv2x}. Our use of reliability constraints therefore is not claimed as a generic optimization novelty. The distinction is the PC-FMCW-specific composition of (i) a hard physical capability gate, (ii) uncertain PHY state including synchronization and interference impairments, (iii) joint communication and sensing QoS, and (iv) explicit characterization of the feasible operating region and abstention behavior.
+Robust optimization under uncertain state is also established. Distributionally robust V2X resource allocation has been formulated around chance constraints to protect communication QoS under imperfect CSI \cite{wu2021robustv2x}; robust ISAC beamforming has considered CSI imperfection jointly with target-location uncertainty \cite{lyu2024dualrobust}. More generally, the scenario approach connects sampled constraints with chance-constrained feasibility \cite{campi2011sampling,care2014fast}. Our use of random draws and confidence qualification is not presented as a new theory of chance constraints. The distinction is the PC-FMCW-specific composition of (i) a hard physical capability gate, (ii) uncertain vehicular PHY state including synchronization and interference impairments, (iii) joint communication and sensing QoS, (iv) a finite discrete action set, and (v) explicit abstention when the available evidence is insufficient.
+
+The abstention mechanism also has a useful conceptual analogue in selective prediction: rejecting uncertain cases can reduce risk on the covered domain at the cost of lower coverage \cite{geifman2019selectivenet}. Here, selection rate plays the role of operational coverage. Consequently, the manuscript always reports conditional reliability together with unconditional joint-QoS probability and abstention; a high selected-case success rate alone is not interpreted as universal service reliability.
+
+Vehicular ISAC is moving toward standardization and deployment-oriented study. 3GPP TR 22.837 is a Release-19 study on integrated sensing and communication \cite{3gpp22837}, while recent vehicular-ISAC literature emphasizes high mobility, robustness, scalability, and hardware/model non-idealities \cite{ma2026vehicularisac}. These developments motivate the deployment context but do not convert the present simulation study into a standards-compliant implementation or hardware validation.
 
 The closest conceptual predecessor to the broader vehicular integration theme is the phase-coded FMCW laser-headlamp ISCAI architecture \cite{liu2026laserheadlamp}. That system addresses optical sensing, communication, and adaptive illumination. The present work is independent in both medium and optimization objective: it studies a \SI{77}{GHz} RF/mmWave PC-FMCW PHY and adapts the physical-layer configuration under high-mobility uncertainty. The unit of control is neither the vehicle trajectory nor a packet queue, beam, or illumination pattern.
 
-The distinguishing question is therefore not whether PC-FMCW can support sensing and communication, nor whether chance constraints can be used in isolation, but where a physically admissible PC-FMCW configuration can jointly support both functions at a declared reliability under mobility-related uncertainty. This motivates a two-layer formulation in which deterministic waveform physics is enforced before stochastic reliability optimization.
+The distinguishing question is therefore not whether PC-FMCW can support sensing and communication, nor whether robust optimization can be used in isolation, but where a physically admissible PC-FMCW configuration can jointly support both functions at a declared reliability under mobility-related uncertainty. This motivates a two-layer formulation in which deterministic waveform physics is enforced before stochastic reliability qualification.
 
 \section{System Model}
 \label{sec:system}
@@ -65,22 +70,22 @@ For target range $R$ and radial velocity $v$, the sensing echo uses the two-way 
 \begin{equation}
  \tau_r=\frac{2R}{c}, \qquad f_{D,r}=\frac{2vf_c}{c}.
 \end{equation}
-After dechirping, the practical radar ADC samples the IF/beat signal. Under the sign convention used in the reference simulator,
+After dechirping, the practical radar ADC samples the IF/beat signal, not the \SI{77}{GHz} carrier. Under the sign convention used in the reference simulator,
 \begin{equation}
  f_b=\mu\tau_r+f_{D,r}.
 \end{equation}
-Slow-time phase advances with the chirp repetition interval $T_r$. Doppler is estimated before its contribution is removed from the beat frequency for range recovery.
+The implementation synthesizes a two-dimensional slow-time/fast-time complex IF matrix. Range--Doppler processing uses windowed FFTs; Doppler is estimated first and removed from the beat-frequency estimate before range recovery, reducing the standard FMCW range--Doppler coupling bias. Receiver-level sensing performance is evaluated through repeated noisy IF trials and RMSE of the resulting range and radial-velocity errors.
 
 \subsection{One-Way Communication Path}
 The remote communication receiver experiences
 \begin{equation}
  \tau_c=\frac{R}{c}, \qquad f_{D,c}=\frac{vf_c}{c}.
 \end{equation}
-The synchronized receiver removes the known FMCW chirp and decodes the remaining phase sequence. A transparent multi-chip DBPSK modem is used as the communication reference. In AWGN its analytical bit-error probability is
+The synchronized receiver removes the known FMCW chirp and decodes the remaining phase sequence. A transparent multi-chip DBPSK modem is used as the communication reference. In AWGN its analytical noncoherent bit-error probability is
 \begin{equation}
- P_b=\frac{1}{2}\exp(-E_b/N_0),
+ P_b=\frac{1}{2}\exp(-E_b/N_0).
 \end{equation}
-and residual frequency error after nominal synchronization is modeled explicitly.
+For $N_{\rm chip}$ chips per chirp and chirp repetition interval $T_r$, the reference raw information rate is $N_{\rm chip}/T_r$. Residual frequency error rotates the baseband chip sequence according to the physical chip times, including the inter-chirp idle interval. The final receiver evaluation additionally includes the declared interference and phase-noise impairments and applies repetition combining according to the selected action.
 
 \section{Physical Feasibility and Adaptive PHY Formulation}
 \label{sec:method}
@@ -92,44 +97,71 @@ For each profile, the simulator derives the fundamental capability quantities
  v_{\max} &= \frac{\lambda}{4T_r},\\
  \Delta v &= \frac{\lambda}{2N_cT_r},
 \end{align}
-where $F_s$ is IF sample rate and $N_c$ is the number of chirps used for slow-time processing. A candidate profile is excluded whenever the requested operating state lies outside its declared physical support. This gate is deterministic and precedes any learned, empirical, or Monte-Carlo reliability estimate.
+where $F_s$ is IF sample rate and $N_c$ is the number of chirps used for slow-time processing. A candidate profile is excluded whenever the requested operating state lies outside its declared physical support. This gate is deterministic and precedes any empirical or Monte-Carlo reliability estimate.
 
-The source-grounded short-range profile uses a \SI{77}{GHz} carrier, \SI{858}{MHz} valid sweep, $T_c=\SI{25.6}{\micro s}$, $T_r=\SI{115.8}{\micro s}$, $F_s=\SI{10}{MSPS}$, 256 samples/chirp, and 64 chirps/frame, following a Texas Instruments automated-parking reference profile \cite{tiParking}. Its derived positive-IF range support is approximately \SI{22.36}{m} and its monostatic unambiguous radial-velocity support is approximately \SI{8.41}{m/s}. A separate high-mobility capability profile uses a \SI{1}{GHz} sweep and \SI{20}{\micro s} timing with \SI{37.5}{MSPS} sampling, giving approximately \SI{56.21}{m} positive-IF range support and \SI{48.67}{m/s} unambiguous radial-velocity support. The latter is a composite capability reference, not a claimed commercial preset.
+The source-grounded short-range profile uses a \SI{77}{GHz} carrier, \SI{858}{MHz} valid sweep, $T_c=\SI{25.6}{\micro s}$, $T_r=\SI{115.8}{\micro s}$, $F_s=\SI{10}{MSPS}$, 256 samples/chirp, and 64 chirps/frame, following a Texas Instruments automated-parking reference profile \cite{tiParking}. Its range resolution is approximately \SI{0.175}{m}, positive-IF range support approximately \SI{22.36}{m}, radial-velocity resolution approximately \SI{0.263}{m/s}, and unambiguous radial-velocity support approximately \SI{8.41}{m/s}. A separate high-mobility capability profile uses a \SI{1}{GHz} sweep, \SI{20}{\micro s} active/repetition timing, \SI{37.5}{MSPS} sampling, 750 samples/chirp, and 128 chirps/frame, giving approximately \SI{0.150}{m} range resolution, \SI{56.21}{m} positive-IF range support, \SI{0.760}{m/s} velocity resolution, and \SI{48.67}{m/s} unambiguous radial-velocity support. The latter is a composite capability reference, not a claimed commercial preset.
 
-\subsection{Finite PHY Action}
-The controller selects from a finite action set containing profile choice, chips per chirp, transmit-power backoff, and repetition factor. Let $a\in\mathcal{A}$ denote an action and let $S$ denote the uncertain physical/link state, including SNR or $E_b/N_0$, Doppler/residual frequency error, interference, phase-noise state, range, velocity, and estimation uncertainty.
+\subsection{Finite PHY Action Space}
+The frozen action set is the Cartesian product of two profiles, three chip budgets $\{16,32,64\}$, three transmit-power backoffs $\{0,3,6\}$ dB, and three repetition factors $\{1,2,4\}$, yielding
+\begin{equation}
+ |\mathcal{A}|=2\times3\times3\times3=54.
+\end{equation}
+The dimensions are intentionally interpretable rather than latent optimization variables: profile choice changes physical range/velocity and sampling burden; chips per chirp changes raw communication rate and chip duration; transmit-power backoff changes communication and sensing SNR; and repetition changes rate and error protection.
 
-The physical gate defines $\mathcal{A}_{\mathrm{phys}}(\hat S)\subseteq\mathcal{A}$. Among admissible actions, the robust controller solves
-\begin{align}
- \min_{a\in\mathcal{A}_{\mathrm{phys}}(\hat S)} \quad & C_{\mathrm{resource}}(a)\\
- \text{s.t.}\quad
- &\Pr\{\mathrm{BER}(a,S)\le\epsilon_{\mathrm{comm}}\}\ge 1-\alpha,\\
- &\Pr\{\mathrm{RMSE}_{R}(a,S)\le\delta_R\}\ge 1-\beta_R,\\
- &\Pr\{\mathrm{RMSE}_{v}(a,S)\le\delta_v\}\ge 1-\beta_v,\\
- &\Pr\{\mathrm{joint\ QoS}(a,S)\}\ge 1-\eta,\\
- &R_{\mathrm{eff}}(a,S)\ge R_{\min},
-\end{align}
-when the corresponding rate constraint applies. If no candidate passes, the controller abstains. Physical infeasibility and robust abstention are recorded separately.
+The declared normalized resource cost is a dimensionless experimental index rather than energy in joules. For action $a$ it is implemented as
+\begin{equation}
+ C(a)=g_p\left(0.55\,10^{-b/10}+0.25\frac{N_{\rm chip}}{16}+0.20N_{\rm rep}\right),
+\end{equation}
+where $b$ is power backoff in dB, $N_{\rm rep}$ is the repetition factor, and $g_p=1$ for the parking profile and $1.6$ for the high-mobility capability profile. This synthetic index is used only for consistent action ordering and must not be interpreted as physical energy consumption.
+
+Let $S$ denote the uncertain physical/link state, including $E_b/N_0$, IF SNR, range, radial velocity, residual CFO, interference, phase-noise state, and estimation uncertainty. The physical gate defines $\mathcal{A}_{\mathrm{phys}}(\hat S)\subseteq\mathcal{A}$. Among admissible actions, the robust controller seeks the minimum-cost configuration satisfying the declared joint-QoS reliability.
+
+\subsection{Baselines and Oracle}
+B0 uses a fixed high-mobility configuration whenever that configuration remains physically admissible. B1 minimizes resource cost subject to communication-only selector constraints, B2 does the analogous sensing-only adaptation, and B3 requires communication and sensing constraints jointly while treating the estimated state as exact. B4 adds uncertainty draws and confidence qualification. The Oracle is deliberately non-deployable: it uses the true state and receiver-level evaluation to find the minimum declared resource-cost action that succeeds in hindsight. The Oracle is therefore a reference bound, not a realizable controller.
+
+\section{Finite-Sample Reliability Qualification}
+\label{sec:confidence}
+For a physically admissible action $a$, B4 draws uncertain states around the estimated state and records the binary joint-QoS outcome. If $k$ of $N$ draws succeed, $\hat p=k/N$ is an empirical fraction, not a reliability certificate. The implementation therefore uses a one-sided Wilson lower confidence bound
+\begin{equation}
+ L_W=\frac{\hat p+\frac{z^2}{2N}-z\sqrt{\frac{\hat p(1-\hat p)}{N}+\frac{z^2}{4N^2}}}{1+\frac{z^2}{N}},
+\end{equation}
+where $z=\Phi^{-1}(0.95)\approx1.64485$ for the frozen one-sided 95\% confidence rule. Wilson-type intervals avoid the well-known poor small-sample/boundary behavior of the elementary Wald interval \cite{brown2001binomial}. B4 admits an action only if
+\begin{equation}
+ L_W\ge\rho,\qquad \rho=0.95,
+\end{equation}
+and then selects the cheapest admitted action. If no action qualifies, the controller abstains.
+
+The finite-draw budget has a structural effect. With all $N$ trials successful, the Wilson lower bound simplifies to $N/(N+z^2)$. Thus, with $N=32$, even 32/32 successes give $L_W\approx0.9220$ and the frozen target is unattainable. At 64 draws the maximum lower bound is approximately 0.9594, so the target becomes attainable, but only with 64/64 successes. The supplemental calibration later evaluates 32, 64, 128, 256, and 512 draws against a nested 4096-draw reference. That high-draw reference reduces Monte-Carlo decision noise; it is not physical ground truth.
+
+B4 uses an action-local deterministic uncertainty stream derived from the state seed and action identity. This prevents the robust-selector sampling stream from being conflated with the held-out final receiver evaluation. The frozen protocol uses 512 internal draws and does not tune the reliability threshold after observing final results.
 
 \section{Evaluation Protocol}
 \label{sec:protocol}
-The frozen publication-v2.1 protocol declares communication BER $\le10^{-3}$, effective rate $\ge\SI{100}{kbps}$, range RMSE $\le\SI{1}{m}$, velocity RMSE $\le\SI{1}{m/s}$, and a target joint reliability of 0.95. The action space contains 54 combinations generated from 16, 32, or 64 chips per chirp; transmit-power backoff of 0, 3, or \SI{6}{dB}; repetition factors 1, 2, or 4; and profile selection.
+The frozen publication-v2.1 protocol declares communication BER $\le10^{-3}$, effective rate $\ge\SI{100}{kbps}$, range RMSE $\le\SI{1}{m}$, velocity RMSE $\le\SI{1}{m/s}$, and a target joint reliability of 0.95. The v2.1 change corrects a selector-side sensing-SNR scaling defect identified by the mandatory smoke gate; the QoS thresholds, receiver-level evaluation, action set, seed bank, and statistical rules were left unchanged.
 
-Six policies are compared on common support: B0 fixed PHY, B1 communication-only adaptation, B2 sensing-only adaptation, B3 deterministic joint adaptation at the estimated state, B4 robust joint adaptation under the estimated state distribution, and a hindsight Oracle using true receiver-level state as a non-deployable reference. The frozen benchmark uses 1000 final seeds, paired policy evaluation, 10,000 bootstrap resamples for paired differences, and Wilson lower confidence bounds for reliability statements. Supplemental reviewer experiments use smaller dedicated state banks and do not replace the frozen primary benchmark.
+Six policies are evaluated on common support: B0, B1, B2, B3, B4, and Oracle. The frozen primary benchmark uses 12 predeclared scenarios for each of 1000 seeds beginning at 10000, yielding 12000 state/seed units per policy and 72000 receiver-level evaluations overall. Each final receiver evaluation uses 20000 communication bits and three sensing trials. Policy comparisons are paired on the common state/seed bank. Paired uncertainty intervals use 10000 bootstrap resamples at 95\% confidence. This paired design removes between-bank Monte-Carlo variation from policy differences and is therefore more informative than comparing independent random test sets.
 
-All numerical outputs in this paper are controlled simulation or analytical evidence. Literature-grounded hardware constants and externally reported measurements are retained as provenance and are not represented as measurements produced by this work.
+Primary results are frozen separately from reviewer-grade supplemental evidence. Smoke runs are structural diagnostics and are not promoted to publication results. Supplemental studies probe uncertainty scale, reliability targets, finite-draw calibration, physics and uncertainty-source ablations, distribution shift, model mismatch, action-space restrictions, confidence maps, empirical Pareto structure, and host runtime.
+
+All numerical outputs in this paper are controlled simulation, analytical, statistical, or host-runtime evidence. Literature-grounded hardware constants and externally reported measurements are retained as provenance and are not represented as measurements produced by this work.
 
 \input{results_v2_1_tables}
 \input{supplemental_v2_1_tables}
 \input{final_results_discussion}
 
+\section{Reproducibility and Claim Boundaries}
+\label{sec:reproducibility}
+The public research repository freezes the publication-v2.1 protocol, fixed seed family, policy implementation, receiver models, machine-readable JSON/CSV results, table generators, supplemental evidence scripts, and CI workflows. The manuscript source is built by an IEEEtran LaTeX audit workflow that fails on unresolved citations or references. A separate CI workflow runs the unit suite and smoke validations spanning the communication/sensing validation path, the paired policy benchmark, and the supplemental research surface.
+
+Reproducibility does not widen the claim class. The conditional reliability statements are conditional on the declared uncertainty models and finite action set. The empirical Pareto partition is restricted to realized evaluated operating points. The 4096-draw calibration reference is not physical truth. Runtime is measured for the reference Python/Linux implementation and is not an embedded-ECU timing certification. Packet error rate is not independently measured without a declared packet model. Finally, the composite high-mobility profile is a simulator capability reference rather than a statement that a particular commercial radar exposes the identical preset.
+
 \section{Limitations}
 \label{sec:limitations}
-The reliability conclusions are conditional on the declared uncertainty families and finite action set. Severe SNR or interference mismatch can invalidate the robust guarantee, as shown in the supplemental mismatch banks. The communication receiver is a transparent DBPSK reference implementation rather than a measured automotive communication standard, and the phase-noise specification is not converted into a stochastic oscillator model without additional assumptions. The high-mobility profile is a composite capability reference. Finally, runtime is measured for an unoptimized Python implementation on GitHub Actions infrastructure rather than an embedded automotive target; hardware validation is required before deployment-level latency, energy, or measurement claims can be made.
+The reliability conclusions are conditional on the declared uncertainty families and finite action set. Severe SNR or interference mismatch can invalidate the robust operating region, as shown in the supplemental mismatch banks. The communication receiver is a transparent DBPSK reference implementation rather than a measured automotive communication standard, and the phase-noise specification is not converted into a detailed oscillator model without additional assumptions. The high-mobility profile is a composite capability reference. Finally, runtime is measured for an unoptimized Python implementation rather than an embedded automotive target; hardware-in-the-loop and RF experiments are required before deployment-level latency, energy, or measurement claims can be made.
 
 \input{final_abstract_conclusion_conclusion_only}
 
 \bibliographystyle{IEEEtran}
-\bibliography{references_v2_1}
+\bibliography{references_v2_1,references_submission}
 
 \end{document}

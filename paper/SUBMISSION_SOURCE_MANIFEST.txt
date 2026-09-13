@@ -1,4 +1,5 @@
 manuscript_v2_1.tex
+figures_submission.tex
 final_abstract_conclusion_abstract_only.tex
 final_abstract_conclusion_conclusion_only.tex
 results_v2_1_tables.tex

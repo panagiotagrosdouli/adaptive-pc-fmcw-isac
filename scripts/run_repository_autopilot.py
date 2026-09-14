@@ -54,6 +54,9 @@ def main() -> int:
         stages.extend([
             ("paper1_build", ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "paper1_ieee.tex"], ROOT / "paper"),
             ("paper2_build", ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "paper2_ieee.tex"], ROOT / "paper"),
+            # The deterministic submission bundle intentionally contains the canonical
+            # publication-v2.1 PDF, not only the standalone Paper 2 wrapper output.
+            ("canonical_manuscript_build", ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "manuscript_v2_1.tex"], ROOT / "paper"),
             ("submission_bundle", [py, "scripts/build_submission_bundle.py", "--output", "artifacts/publication/submission/adaptive-pc-fmcw-isac-submission-v2.1.zip"], None),
         ])
 

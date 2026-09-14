@@ -9,7 +9,7 @@ ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper submission-artifacts submission-bundle repo-audit submission-check
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper paper1 paper2 submission-artifacts submission-bundle repo-audit submission-check autopilot autopilot-smoke
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -85,6 +85,12 @@ research-smoke:
 paper:
 	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error manuscript_v2_1.tex
 
+paper1:
+	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error paper1_ieee.tex
+
+paper2:
+	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error paper2_ieee.tex
+
 submission-artifacts:
 	$(PYTHON) scripts/export_submission_action_space.py --output artifacts/publication/submission/action_space.csv
 	$(PYTHON) scripts/build_submission_manifest.py --output artifacts/publication/submission/manifest.json
@@ -103,3 +109,9 @@ submission-check:
 	$(MAKE) repo-audit
 	$(MAKE) paper
 	$(PYTHON) scripts/build_submission_bundle.py --output artifacts/publication/submission/adaptive-pc-fmcw-isac-submission-v2.1.zip
+
+autopilot:
+	$(PYTHON) scripts/run_repository_autopilot.py --mode submission --status artifacts/autopilot/status.json
+
+autopilot-smoke:
+	$(PYTHON) scripts/run_repository_autopilot.py --mode smoke --status artifacts/autopilot/status.json

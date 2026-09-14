@@ -142,8 +142,8 @@ For the high-mobility capability profile, the pilot target is $R=\SI{20.28}{m}$ 
 
 The communication reference uses 32 chips/chirp and was evaluated over 300,000 bits per $E_b/N_0$ point. The simulated BER closely tracks the analytical DBPSK expression: at 0 dB the simulation is 0.18363 versus 0.18394 theory, at 4 dB it is 0.04106 versus 0.04056, and at 8 dB it is 0.00092 versus 0.00091. This agreement validates the reference modem under its declared AWGN assumptions; it does not establish a fielded vehicular communication link.
 
-\figPaper1Capability
-\figPaper1Pilot
+\figPaperOneCapability
+\figPaperOnePilot
 
 \section{Discussion}
 The profile calculations expose the main design issue directly. The parking profile offers finer velocity resolution than the high-mobility capability profile but its unambiguous velocity support is only about 8.41 m/s. A high-speed operating state around 19.86 m/s therefore cannot be made valid by increasing SNR or repeating Monte-Carlo trials; the profile itself is outside its declared velocity region. Conversely, the high-mobility profile expands velocity support to approximately 48.67 m/s while using a shorter repetition interval and a larger IF sampling burden.

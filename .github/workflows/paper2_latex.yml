@@ -3,6 +3,7 @@ name: Paper 2 IEEE LaTeX
 on:
   pull_request:
     paths:
+      - 'paper/paper2_ieee.tex'
       - 'paper/manuscript_v2_1.tex'
       - 'paper/final_abstract_conclusion_*.tex'
       - 'paper/final_results_discussion.tex'
@@ -16,6 +17,7 @@ on:
     branches:
       - main
     paths:
+      - 'paper/paper2_ieee.tex'
       - 'paper/manuscript_v2_1.tex'
       - 'paper/final_abstract_conclusion_*.tex'
       - 'paper/final_results_discussion.tex'
@@ -42,12 +44,12 @@ jobs:
           sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers
       - name: Build Paper 2
         working-directory: paper
-        run: latexmk -pdf -interaction=nonstopmode -halt-on-error manuscript_v2_1.tex
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error paper2_ieee.tex
       - name: Check references and labels
         working-directory: paper
         run: |
           set -euo pipefail
-          ! grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations|multiply defined|There were multiply-defined labels" manuscript_v2_1.log
+          ! grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations|multiply defined|There were multiply-defined labels" paper2_ieee.log
       - name: Check Paper 2 claim audit
         run: test -s paper/PAPER2_CLAIM_AUDIT.md
       - name: Check Paper 2 evidence manifest
@@ -58,8 +60,9 @@ jobs:
           name: paper2-ieee-build
           if-no-files-found: error
           path: |
-            paper/manuscript_v2_1.pdf
-            paper/manuscript_v2_1.log
+            paper/paper2_ieee.pdf
+            paper/paper2_ieee.log
+            paper/paper2_ieee.tex
             paper/manuscript_v2_1.tex
             paper/figures_submission.tex
             paper/literature_positioning.tex

@@ -9,7 +9,7 @@ ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper paper1 paper1-physics-ablation paper2 submission-artifacts submission-bundle repo-audit submission-check autopilot autopilot-smoke stage07-test
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper paper1 paper1-physics-ablation paper2 submission-artifacts submission-bundle repo-audit submission-check autopilot autopilot-smoke stage05-test stage07-test
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -19,6 +19,9 @@ setup-paper:
 
 test:
 	pytest -q
+
+stage05-test:
+	pytest -q stages/05_official_predictor_evaluation/test_validate_prediction_artifact.py
 
 stage07-test:
 	pytest -q stages/07_statistics_and_figures

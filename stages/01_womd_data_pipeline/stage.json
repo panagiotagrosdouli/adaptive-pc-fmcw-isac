@@ -1,0 +1,24 @@
+{
+  "id": "stage01",
+  "name": "Official WOMD Data Pipeline",
+  "status": "BLOCKED",
+  "purpose": "Export official WOMD motion scenarios into a provenance-preserving corpus for predictive connectivity evaluation.",
+  "inputs": ["official WOMD training TFRecords", "official WOMD validation TFRecords"],
+  "outputs": ["canonical training/development NPZ", "canonical official-validation NPZ", "corpus audit reports"],
+  "acceptance_criteria": [
+    "scenario identity and true SDC identity are retained",
+    "training/development ownership is assigned at scenario level",
+    "official validation is exported separately and labeled official_validation",
+    "history uses only states through the prediction anchor",
+    "future actor-minus-SDC geometry is retained for downstream link realization",
+    "corpus hashes and schema audits are recorded",
+    "stage remains BLOCKED until real official WOMD corpora pass the audits"
+  ],
+  "forbidden": [
+    "synthetic trajectories promoted as WOMD evidence",
+    "official-validation scenarios used for tuning",
+    "sample-level train/development splitting",
+    "discarding scenario or SDC identity",
+    "treating future SDC motion as zero"
+  ]
+}

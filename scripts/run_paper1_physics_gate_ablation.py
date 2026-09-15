@@ -57,7 +57,8 @@ Ungated & {ungated_valid} & {recoverable} & {_pct(recoverable/supportable)}\\\\
 \\end{{axis}}\\end{{tikzpicture}}
 \\caption{{Boundary-aware deterministic stress grid. Crosses mark capability-blind selections outside the selected profile's support; circles identify the scientifically primary recoverable subset where another declared action is physically valid. The grid is designed around capability boundaries and is not a real-driving probability distribution.}}
 \\label{{fig:p1gateablation}}
-\\end{{figure*}}%}}
+\\end{{figure*}}%
+}}
 """
     (paper/"paper1_physics_gate_ablation_figure.tex").write_text(figure,encoding="utf-8")
     print(json.dumps(s,indent=2,sort_keys=True))

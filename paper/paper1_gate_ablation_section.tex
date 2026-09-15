@@ -1,0 +1,13 @@
+\section{Deterministic Physics-Gate Ablation}
+To isolate the value of physical feasibility filtering from the later robust-policy study, we compare two deterministic nominal selectors over the same 54-action space. Both use the same nominal communication/sensing QoS screen and the same normalized-resource ranking. The only difference is that the gated selector first applies the canonical range and unambiguous-velocity support test, whereas the ungated selector ranks all actions without that test. No Monte-Carlo uncertainty draws, Wilson bounds, or B4 reliability qualification are used in this Paper 1 ablation.
+
+The operating grid is deliberately boundary-aware rather than probabilistically weighted. It contains 14 range values from 0 to 60 m and 17 signed radial-velocity values from $-60$ to $60$ m/s, including samples immediately around the parking and high-mobility support boundaries. Of the resulting 238 states, 132 are physically representable by at least one declared profile and 106 are outside the support of the complete action set.
+
+\input{paper1_physics_gate_ablation_table}
+
+The ungated selector returns an action in all 238 states, but 220 selections (92.44\%) violate the selected profile's deterministic range or velocity support. This percentage characterizes the deliberately boundary-stressing grid and must not be interpreted as a prevalence estimate for real driving. The gated selector selects in the 132 supportable states and makes zero physically invalid selections. In 114 states, the ungated selector chooses an invalid configuration even though another action in the same 54-action set is physically valid; the gate exposes that valid alternative before nominal QoS ranking. In the remaining unsupported states, gating correctly distinguishes physical infeasibility of the declared action set from policy abstention.
+
+\input{paper1_physics_gate_ablation_figure}
+\figPaperOneGateAblation
+
+The ablation therefore supports a narrow methodological claim: standard FMCW capability relations become operationally important when they are enforced as a hard first-stage constraint in finite-action configuration selection. It does not show that all ungated ISAC controllers fail, nor does it establish field reliability. Its purpose is to demonstrate a concrete selection failure mode that cannot be repaired by subsequent statistical averaging once an unsupported waveform has already been chosen.

@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 
-from stages.05_official_predictor_evaluation.validate_prediction_artifact import validate
+
+MODULE_PATH = Path(__file__).with_name("validate_prediction_artifact.py")
+_SPEC = importlib.util.spec_from_file_location("stage05_validator", MODULE_PATH)
+assert _SPEC and _SPEC.loader
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+validate = _MODULE.validate
 
 
 def _artifact(path, include_provenance=True):

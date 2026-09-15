@@ -1,0 +1,25 @@
+{
+  "id": "stage05",
+  "name": "Official Predictor Evaluation Contract",
+  "status": "BLOCKED",
+  "purpose": "Evaluate the deployable motion predictor on the frozen official WOMD validation corpus and emit provenance-complete predictions for Stage 06.",
+  "depends_on": ["stage01", "stage03", "stage04"],
+  "inputs": ["official WOMD validation corpus", "frozen predictor/checkpoint", "frozen preprocessing/configuration", "calibration artifacts if required"],
+  "outputs": ["prediction artifact", "per-sample provenance", "aggregate predictor metrics", "Stage-06-ready prediction schema"],
+  "acceptance_criteria": [
+    "official_validation data are separate from training/development data",
+    "no future ground-truth information is used as predictor input",
+    "checkpoint and preprocessing hashes are recorded",
+    "scenario_id and track_id are retained for every prediction",
+    "prediction horizon and tensor shapes match the canonical Stage-01 contract",
+    "failed/filtered samples are explicitly accounted for",
+    "publication status remains BLOCKED until the real official validation corpus and frozen predictor artifacts are available"
+  ],
+  "forbidden": [
+    "synthetic data presented as official validation",
+    "development data presented as official validation",
+    "future labels used as predictor inputs",
+    "untracked checkpoint/configuration changes",
+    "fabricated predictor metrics"
+  ]
+}

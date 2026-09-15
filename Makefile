@@ -9,7 +9,7 @@ ROBUST_DRAWS ?= 256
 REFERENCE_DRAWS ?= 4096
 FROZEN_E9_E11 ?= artifacts/publication/v2_1_e9_e11.json
 
-.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper paper1 paper2 submission-artifacts submission-bundle repo-audit submission-check autopilot autopilot-smoke
+.PHONY: setup setup-paper test validate-comm validate-sensing validate-physics pilot experiments analysis figures tables gate verdict frozen-e9-confidence paper-results research-smoke research-calibration research-action-space research-distribution-shift research-qos-sensitivity paper paper1 paper1-physics-ablation paper2 submission-artifacts submission-bundle repo-audit submission-check autopilot autopilot-smoke
 
 setup:
 	$(PYTHON) -m pip install -e .[dev]
@@ -85,7 +85,11 @@ research-smoke:
 paper:
 	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error manuscript_v2_1.tex
 
-paper1:
+paper1-physics-ablation:
+	$(PYTHON) scripts/run_paper1_physics_gate_ablation.py --output-dir artifacts/paper1/physics_gate_ablation --paper-dir paper
+	pytest -q tests/test_paper1_physics_gate_ablation.py
+
+paper1: paper1-physics-ablation
 	cd paper && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error paper1_ieee.tex
 
 paper2:

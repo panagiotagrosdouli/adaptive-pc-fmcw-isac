@@ -1,0 +1,17 @@
+{
+  "id": "stage06",
+  "name": "Packet Scheduling and Operating-Region Evaluation",
+  "status": "PARTIAL",
+  "purpose": "Measure the realized packet-level value of prediction under identical traffic and physical link conditions.",
+  "depends_on": ["stage05"],
+  "inputs": ["Stage-05 predictor outputs", "ground-truth goodput/outage traces", "frozen traffic and deadline configuration"],
+  "outputs": ["scenario-level scheduler metrics", "paired policy results", "inputs for Stage-07 clustered inference"],
+  "acceptance_criteria": [
+    "all policies use identical exogenous traces within each paired comparison",
+    "physical delivery is scored only from ground truth",
+    "deadline semantics are explicit and deterministic",
+    "raw scenario results retain scheduler identity and operating-condition identifiers",
+    "publication status remains PARTIAL until frozen Stage-05/PHY artifacts and the complete declared grid are executed"
+  ],
+  "forbidden": ["using predictions as realized channel capacity", "comparing policies on different random traces", "promoting synthetic smoke tests to publication evidence"]
+}

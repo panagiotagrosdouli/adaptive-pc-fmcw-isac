@@ -1,11 +1,13 @@
 import importlib.util
 from pathlib import Path
+import sys
 
 import numpy as np
 
 P = Path(__file__).with_name("simulator.py")
 SPEC = importlib.util.spec_from_file_location("stage06_simulator", P)
 SIM = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = SIM
 assert SPEC.loader is not None
 SPEC.loader.exec_module(SIM)
 

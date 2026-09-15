@@ -20,7 +20,7 @@
 \maketitle
 
 \begin{abstract}
-Integrated sensing and communication (ISAC) systems that reuse a frequency-modulated continuous-wave (FMCW) waveform for both radar sensing and data transmission face a basic but often hidden constraint: a waveform configuration can be statistically attractive yet physically incapable of representing the requested range or radial velocity. This paper studies that configuration problem for a 77-GHz phase-coded FMCW (PC-FMCW) vehicular physical layer. We build a reproducible signal model that separates the one-way communication path from the two-way monostatic sensing echo, samples sensing at the dechirped intermediate frequency, and exposes waveform parameters that directly determine range and velocity capability. We then construct a finite, interpretable 54-action configuration space from two waveform profiles, three phase-code chip budgets, three transmit-power backoffs, and three repetition factors. A deterministic physics gate rejects actions whose range, positive-IF support, or unambiguous-velocity limits cannot cover the requested state before any stochastic reliability calculation is attempted. Source-grounded 77-GHz profile analysis shows a short-range parking profile with approximately 0.175-m range resolution but only 8.41-m/s monostatic unambiguous radial velocity, whereas the high-mobility capability profile extends the corresponding velocity support to approximately 48.67 m/s. Pilot simulation evidence further shows the transition from poor sensing recovery to sub-resolution errors as IF SNR increases, and validates the DBPSK communication reference against its analytical AWGN curve. These results establish a physics-first design principle for PC-FMCW ISAC: physical representability should be treated as a prerequisite to reliability optimization, not as an after-the-fact performance statistic. The study is simulation-based and does not claim hardware validation or a commercial implementation of the composite high-mobility profile.
+Integrated sensing and communication (ISAC) systems that reuse frequency-modulated continuous-wave (FMCW) signals for sensing and data transmission face a configuration constraint that is distinct from stochastic link quality: a candidate waveform may be attractive under nominal QoS metrics yet physically unable to represent the requested range or radial velocity. This paper studies that problem for a 77-GHz phase-coded FMCW (PC-FMCW) vehicular physical layer. We construct an interpretable 54-action space and formulate standard FMCW range and unambiguous-velocity limits as a state-dependent hard admissibility layer applied before QoS/resource ranking. A controlled gated-versus-ungated ablation keeps the action set, nominal QoS screen, and ranking identical and removes only this physical filter. On a declared boundary-aware range--velocity stress grid, 132 of 238 states are supportable by at least one action. Among these supportable states, the capability-blind selector chooses a physically unsupported action in 114 cases (86.36\%) despite the existence of a valid alternative, whereas physics-gated selection returns a physically valid action in all 132 states. Source-grounded profile analysis gives approximately 0.175-m range resolution and 8.41-m/s monostatic unambiguous radial velocity for the parking profile, while a composite high-mobility capability profile extends velocity support to approximately 48.67 m/s. Pilot simulations validate the declared sensing and DBPSK reference paths. The contribution is not a new FMCW capability equation, but an explicit physical-admissibility stage for finite-action PC-FMCW selection and controlled evidence of the recoverable selection failure caused by omitting it. The study is simulation/model based and does not claim hardware validation, field prevalence, or a commercial implementation of the composite high-mobility profile.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -28,135 +28,115 @@ Integrated sensing and communication, phase-coded FMCW, automotive radar, vehicu
 \end{IEEEkeywords}
 
 \section{Introduction}
-Integrated sensing and communication (ISAC) aims to share waveform, spectrum, hardware, and signal-processing resources between wireless communication and environmental sensing \cite{liu2022isac,wang2022isac}. Vehicular operation is a particularly demanding setting because communication and sensing are both exposed to rapid state variation, Doppler, interference, synchronization errors, and tight latency constraints. Recent ISAC surveys place waveform design, synchronization, resource management, standardization, and practical validation among the central physical-layer and systems questions \cite{liu2022isac,wang2024isac,vehicular2022isac}.
+Integrated sensing and communication (ISAC) aims to share waveform, spectrum, hardware, and signal-processing resources between wireless communication and environmental sensing \cite{liu2022isac,wang2022isac}. Vehicular operation is demanding because communication and sensing are exposed to rapid state variation, Doppler, interference, synchronization errors, and tight latency constraints \cite{wang2024isac,vehicular2022isac,ma2026vehicularisac}.
 
-Phase-coded FMCW is an attractive member of the ISAC waveform family because an FMCW carrier preserves the delay--Doppler structure used by automotive radar while phase modulation provides a communication degree of freedom. Experimental PC-FMCW work has established the sensing-and-communication principle, while subsequent studies have investigated receiver structures, waveform smoothing, coherent MIMO operation, code-dependent sensing, and interference mitigation \cite{kumbul2021experimental,kumbul2022receiver,kumbul2022smoothed,kumbul2022codes,kumbul2023mimo,kumbul2023performance,kumbul2024interference}. The contribution of this paper is deliberately different. We do not introduce phase coding, a new modulation format, or a new range--Doppler estimator. Instead, we address the configuration-selection question that arises when a finite PC-FMCW action must serve a moving vehicular state.
+Phase-coded FMCW is attractive because an FMCW carrier preserves the delay--Doppler structure used by automotive radar while phase modulation provides a communication degree of freedom. Experimental and analytical PC-FMCW studies have established the waveform family and investigated receiver structures, smoothing, coherent MIMO operation, code-dependent sensing, performance, and interference mitigation \cite{kumbul2021experimental,kumbul2022receiver,kumbul2022smoothed,kumbul2022codes,kumbul2023mimo,kumbul2023performance,kumbul2024interference}. We do not introduce phase coding, a new modulation format, or a new range--Doppler estimator.
 
-The key observation is physical rather than statistical. For an FMCW profile, bandwidth determines range resolution, IF sampling and chirp slope constrain positive-IF range support, and chirp repetition interval determines monostatic unambiguous radial velocity. Consequently, a profile with excellent range resolution can still be unusable for a high-speed target. If such a configuration enters a subsequent reliability optimizer, failures caused by deterministic aliasing or support limits can be incorrectly interpreted as stochastic unreliability. The correct order is therefore to establish physical representability first and optimize reliability only inside the admissible region.
+The key observation is architectural. Bandwidth determines range resolution, IF sampling and chirp slope constrain positive-IF range support, and repetition interval determines monostatic unambiguous radial velocity. These relations are standard; however, if finite candidate configurations are ranked without first enforcing their state-dependent support, a decision layer can select a waveform that cannot represent the requested state. Such deterministic support failure should not be delegated to a later stochastic reliability calculation.
 
-This paper develops that physics-first view for a reproducible 77-GHz PC-FMCW PHY. The study has four objectives: (i) define a physically consistent joint communication/sensing model; (ii) derive profile-level capability boundaries from waveform parameters; (iii) construct an interpretable finite action space for adaptation; and (iv) demonstrate, with source-grounded parameters and pilot simulations, why the physical gate is necessary before robust QoS qualification.
+This paper therefore: (i) defines a physically consistent joint communication/sensing model; (ii) derives profile-level capability boundaries; (iii) constructs an interpretable 54-action PC-FMCW space; and (iv) isolates the role of physical admissibility through a controlled gated-versus-ungated selector ablation.
 
-The paper makes the following contributions:
+The contributions are:
 \begin{itemize}
-    \item a unified PC-FMCW signal model that explicitly distinguishes one-way communication propagation from two-way monostatic sensing;
-    \item an analytical capability layer linking bandwidth, chirp timing, IF sampling, range resolution, positive-IF range support, velocity resolution, and unambiguous radial velocity;
-    \item a 54-action finite PHY configuration space whose dimensions have direct physical interpretations;
-    \item a deterministic physics gate that removes configurations outside their declared operating region before reliability evaluation;
-    \item source-grounded profile and pilot-simulation evidence that exposes the short-range/high-mobility configuration trade-off without presenting simulation as hardware measurement.
+\item a PC-FMCW signal model that distinguishes one-way communication from two-way monostatic sensing and dechirped-IF sampling;
+\item an analytical capability layer that converts standard FMCW timing, bandwidth, and IF-sampling relations into a state-dependent admissible action set;
+\item a finite 54-action PHY configuration space with directly interpretable control dimensions;
+\item a controlled ablation in which only the physical filter is removed: among 132 supportable stress-grid states, the ungated selector chooses an unsupported action in 114 cases (86.36\%) despite a valid alternative, while the gated selector is physically valid in all 132;
+\item source-grounded profile and pilot-simulation evidence with explicit separation between simulation and hardware measurement.
 \end{itemize}
 
 \section{Related Work}
-The broader ISAC literature has established the dual-function waveform perspective and identified the coupled sensing/communication trade-off as a central design problem \cite{liu2022isac,wang2022isac,wang2024isac}. Vehicular ISAC adds rapid channel and target dynamics and therefore makes waveform timing, Doppler, synchronization, and implementation constraints especially important \cite{vehicular2022isac}. A recent vehicular-ISAC survey further emphasizes robustness, high mobility, hardware/model non-idealities, and prototype validation as practical research directions \cite{ma2026vehicularisac}.
+The broader ISAC literature establishes dual-function waveform design and coupled sensing/communication resource trade-offs \cite{liu2022isac,wang2022isac,wang2024isac}. Vehicular ISAC adds rapid channel and target dynamics, making waveform timing, Doppler, synchronization, implementation constraints, and robustness particularly important \cite{vehicular2022isac,ma2026vehicularisac}.
 
-PC-FMCW provides a particularly relevant physical-layer test case. Kumbul et al. experimentally investigated PC-FMCW for sensing and communications \cite{kumbul2021experimental}, and later work analyzed performance, receiver structures, smoothed waveforms, coherent MIMO, sensing codes, and interference mitigation \cite{kumbul2022receiver,kumbul2022smoothed,kumbul2022codes,kumbul2023mimo,kumbul2023performance,kumbul2024interference}. These studies motivate the waveform family and receiver decomposition used here. However, they do not make profile-level physical representability the explicit first-stage decision variable in a finite vehicular adaptation problem.
+PC-FMCW provides the closest waveform-specific background. Kumbul et al. experimentally investigated PC-FMCW sensing and communications and subsequently studied receiver structures, smoothed waveforms, coherent MIMO, sensing codes, performance, and interference mitigation \cite{kumbul2021experimental,kumbul2022receiver,kumbul2022smoothed,kumbul2022codes,kumbul2023mimo,kumbul2023performance,kumbul2024interference}. These works establish important waveform properties, including Doppler and unambiguous-velocity behavior, but address waveform/receiver design rather than the controlled finite-action admissibility ablation studied here.
 
-The present work is also distinct from robust resource allocation and robust ISAC beamforming. Those approaches address uncertainty in channel state, target location, or optimization variables \cite{wu2021robustv2x,lyu2024dualrobust}. Such uncertainty treatment is complementary to, rather than a substitute for, deterministic waveform capability checks. Our central design rule is that an action must first be physically capable of representing the requested state. Statistical reliability is evaluated only after this gate.
+Adaptive waveform and ISAC resource optimization are also established research areas; therefore neither adaptation itself nor physical FMCW limits are claimed as new. Recent radar-centric FMCW ISAC work, for example, dynamically reconfigures chirp duration, bandwidth, and phase coding to trade communication throughput against sensing performance \cite{temiz2026adaptive}. Our question is narrower: before a finite PC-FMCW action is ranked for QoS or resource cost, is that action physically capable of representing the requested range--velocity state? We encode that requirement as a hard first-stage admissibility set and remove only that set in a controlled counterfactual. Robust resource allocation and robust ISAC beamforming address uncertainty in channel state, target location, or optimization variables \cite{wu2021robustv2x,lyu2024dualrobust}; those methods are complementary to deterministic representability checks.
 
 \section{System and Signal Model}
-\subsection{PC-FMCW Transmit Signal}
 For chirp index $m$ and fast time $t$, the idealized transmitted signal is
 \begin{equation}
- s_m(t)=\sqrt{P_m}\exp\left(j[\pi\mu t^2+\phi_m(t)]\right),
+s_m(t)=\sqrt{P_m}\exp\left(j[\pi\mu t^2+\phi_m(t)]\right),
 \end{equation}
-where $\mu=B/T_c$ is the chirp slope, $B$ is the swept bandwidth, $T_c$ is the active chirp duration, $P_m$ is transmit power, and $\phi_m(t)$ is the phase-coded communication waveform. The model is intentionally parameterized so that the physical capability consequences of $B$, $T_c$, $T_r$, and $F_s$ remain explicit.
+where $\mu=B/T_c$, $B$ is swept bandwidth, $T_c$ is active chirp duration, $P_m$ is transmit power, and $\phi_m(t)$ is the phase-coded communication waveform.
 
-\subsection{Monostatic Sensing}
-For target range $R$ and radial velocity $v$, the sensing echo has two-way delay and Doppler
+For monostatic sensing,
 \begin{equation}
- \tau_r=\frac{2R}{c},\qquad f_{D,r}=\frac{2vf_c}{c}.
+\tau_r=\frac{2R}{c},\qquad f_{D,r}=\frac{2vf_c}{c},\qquad f_b=\mu\tau_r+f_{D,r}.
 \end{equation}
-After dechirping, the receiver operates on the beat/IF signal rather than directly sampling the 77-GHz carrier. With the simulator sign convention,
-\begin{equation}
- f_b=\mu\tau_r+f_{D,r}.
-\end{equation}
-The resulting complex IF matrix is processed across fast and slow time using windowed FFTs. Doppler is estimated and removed from the beat-frequency estimate before range recovery, reducing the standard range--Doppler coupling bias used in the simulator.
+The receiver processes the dechirped beat/IF signal rather than directly sampling the 77-GHz carrier. The complex IF matrix is processed across fast and slow time with windowed FFTs; Doppler is estimated and removed from the beat-frequency estimate before range recovery under the simulator convention.
 
-\subsection{One-Way Communication}
-The remote communication path has one-way delay and Doppler
+The remote communication path is one-way,
 \begin{equation}
- \tau_c=\frac{R}{c},\qquad f_{D,c}=\frac{vf_c}{c}.
+\tau_c=\frac{R}{c},\qquad f_{D,c}=\frac{vf_c}{c}.
 \end{equation}
-The reference modem uses multi-chip DBPSK after FMCW dechirping. Under AWGN, the noncoherent DBPSK reference has
+The reference modem uses multi-chip DBPSK after FMCW dechirping. Under AWGN, the noncoherent reference is
 \begin{equation}
- P_b=\frac{1}{2}\exp(-E_b/N_0).
+P_b=\frac{1}{2}\exp(-E_b/N_0).
 \end{equation}
-The reference raw information rate for $N_{\rm chip}$ chips per chirp is proportional to $N_{\rm chip}/T_r$. Residual frequency error rotates the baseband sequence according to physical chip times and therefore becomes increasingly important at high mobility.
 
 \section{Physical Capability Layer}
-For each waveform profile, the simulator derives
+For each profile,
 \begin{align}
- \Delta R &= \frac{c}{2B},\\
- R_{\max}^{(+\mathrm{IF})} &= \frac{cF_s}{4\mu},\\
- v_{\max} &= \frac{\lambda}{4T_r},\\
- \Delta v &= \frac{\lambda}{2N_cT_r},
+\Delta R &= \frac{c}{2B}, & R_{\max}^{(+\mathrm{IF})} &= \frac{cF_s}{4\mu},\\
+v_{\max} &= \frac{\lambda}{4T_r}, & \Delta v &= \frac{\lambda}{2N_cT_r}.
 \end{align}
-where $F_s$ is the IF sample rate, $N_c$ is the number of slow-time chirps, and $\lambda=c/f_c$. The first quantity is the range resolution; the second is the positive-IF range support under the receiver convention; the third is the monostatic unambiguous radial-velocity support; and the fourth is the nominal Doppler resolution.
+These are standard FMCW capability relations; the methodological step in this work is to make their state-dependent satisfaction a prerequisite for action ranking.
 
-The source-grounded short-range profile is a 77-GHz automated-parking reference with $B=\SI{858}{MHz}$, $T_c=\SI{25.6}{\micro s}$, $T_r=\SI{115.8}{\micro s}$, $F_s=\SI{10}{MSPS}$, 256 samples/chirp, and 64 chirps/frame \cite{tiParking}. It yields approximately $\Delta R=\SI{0.175}{m}$, $R_{\max}^{(+\mathrm{IF})}=\SI{22.36}{m}$, $\Delta v=\SI{0.263}{m/s}$, and $v_{\max}=\SI{8.41}{m/s}$.
+The source-grounded parking profile uses 77 GHz, $B=\SI{858}{MHz}$, $T_c=\SI{25.6}{\micro s}$, $T_r=\SI{115.8}{\micro s}$, $F_s=\SI{10}{MSPS}$, 256 samples/chirp, and 64 chirps/frame \cite{tiParking}. It gives approximately $\Delta R=\SI{0.175}{m}$, $R_{\max}^{(+\mathrm{IF})}=\SI{22.36}{m}$, $\Delta v=\SI{0.263}{m/s}$, and $v_{\max}=\SI{8.41}{m/s}$.
 
-The high-mobility capability profile uses a 77-GHz carrier, $B=\SI{1}{GHz}$, $T_c=T_r=\SI{20}{\micro s}$, $F_s=\SI{37.5}{MSPS}$, 750 samples/chirp, and 128 chirps/frame. Its derived quantities are approximately $\Delta R=\SI{0.150}{m}$, $R_{\max}^{(+\mathrm{IF})}=\SI{56.21}{m}$, $\Delta v=\SI{0.760}{m/s}$, and $v_{\max}=\SI{48.67}{m/s}$. This profile is explicitly a composite capability reference rather than a claimed commercial preset.
+The composite high-mobility capability profile uses 77 GHz, $B=\SI{1}{GHz}$, $T_c=T_r=\SI{20}{\micro s}$, $F_s=\SI{37.5}{MSPS}$, 750 samples/chirp, and 128 chirps/frame. Its derived values are approximately $\Delta R=\SI{0.150}{m}$, $R_{\max}^{(+\mathrm{IF})}=\SI{56.21}{m}$, $\Delta v=\SI{0.760}{m/s}$, and $v_{\max}=\SI{48.67}{m/s}$. It is a capability reference, not a claimed commercial preset.
 
 \begin{table}[t]
 \centering
 \caption{Source-grounded and derived profile capabilities.}
 \label{tab:profiles}
-\begin{tabular}{lcc}
-\toprule
-Quantity & Parking & High mobility\\
-\midrule
+\begin{tabular}{lcc}\toprule
+Quantity & Parking & High mobility\\\midrule
 Carrier & 77 GHz & 77 GHz\\
 Bandwidth & 858 MHz & 1 GHz\\
 Chirp/repetition & 25.6/115.8 $\mu$s & 20/20 $\mu$s\\
 IF sampling & 10 MSPS & 37.5 MSPS\\
-Samples/chirp & 256 & 750\\
-Chirps/frame & 64 & 128\\
 Range resolution & 0.175 m & 0.150 m\\
 Positive-IF range & 22.36 m & 56.21 m\\
 Velocity resolution & 0.263 m/s & 0.760 m/s\\
-Unambiguous velocity & 8.41 m/s & 48.67 m/s\\
-\bottomrule
+Unambiguous velocity & 8.41 m/s & 48.67 m/s\\\bottomrule
 \end{tabular}
 \end{table}
 
 \section{Physics-Gated Finite Action Space}
 The adaptive PHY action is
 \begin{equation}
- a=(p,N_{\rm chip},b,N_{\rm rep}),
+a=(p,N_{\rm chip},b,N_{\rm rep}),
 \end{equation}
-where $p$ selects one of the two profiles, $N_{\rm chip}\in\{16,32,64\}$ is the chip budget, $b\in\{0,3,6\}$ dB is transmit-power backoff, and $N_{\rm rep}\in\{1,2,4\}$ is the repetition factor. Therefore,
-\begin{equation}
- |\mathcal{A}|=2\times3\times3\times3=54.
-\end{equation}
-The action dimensions are deliberately interpretable. Profile choice controls waveform capability and sampling burden; chip count changes communication rate and chip duration; power backoff changes link and sensing margin; and repetition changes rate and error protection.
+with two profiles, $N_{\rm chip}\in\{16,32,64\}$, power backoff $b\in\{0,3,6\}$ dB, and repetition $N_{\rm rep}\in\{1,2,4\}$, giving $|\mathcal A|=54$.
 
-For an estimated operating state $\hat S=(\hat R,\hat v,\ldots)$, the deterministic gate retains
+For estimated state $\hat S=(\hat R,\hat v,\ldots)$, the gate retains
 \begin{equation}
- \mathcal{A}_{\mathrm{phys}}(\hat S)=\{a\in\mathcal{A}:\hat R\le R_{\max}^{(+\mathrm{IF})}(a),\ |\hat v|\le v_{\max}(a)\}.
+\mathcal{A}_{\mathrm{phys}}(\hat S)=\{a\in\mathcal{A}:\hat R\le R_{\max}^{(+\mathrm{IF})}(a),\ |\hat v|\le v_{\max}(a)\}.
 \end{equation}
-If $\mathcal{A}_{\mathrm{phys}}(\hat S)=\varnothing$, the state is declared physically infeasible for the declared action set. This statement is stronger and more informative than saying that a Monte-Carlo reliability estimate is low: no amount of statistical averaging can make an aliased or unsupported waveform physically represent the requested state.
+If this set is empty, the state is physically infeasible for the declared action set. This is distinct from policy abstention or a low stochastic reliability estimate.
 
 \section{Pilot Validation}
-The pilot evidence in the repository is explicitly labelled simulation evidence, not measurement. The parking profile was evaluated at a target $(R,v)=(\SI{10}{m},\SI{3}{m/s})$ over 50 trials per SNR point. At IF SNR $-25$ dB, the range RMSE was $\SI{0.0214}{m}$ and the velocity RMSE was $\SI{0.0351}{m/s}$; at $-20$ dB they were $\SI{0.0115}{m}$ and $\SI{0.0301}{m/s}$, respectively. At $-30$ dB the corresponding errors were $\SI{7.42}{m}$ and $\SI{5.13}{m/s}$, illustrating a sharp transition in the noisy pilot regime. The repository reports that all trials at $-25$ dB and above were within one derived range and velocity resolution.
-
-For the high-mobility capability profile, the pilot target is $R=\SI{20.28}{m}$ and $v=\SI{19.856}{m/s}$. This velocity was derived from a published 77-GHz one-way Doppler benchmark and is used here only as a stress-test state. At IF SNR $-30$ dB, the range RMSE was $\SI{0.0106}{m}$ and velocity RMSE $\SI{0.0946}{m/s}$; at $-25$ dB they were approximately $0.000165$ m and $0.0936$ m/s.
-
-The communication reference uses 32 chips/chirp and was evaluated over 300,000 bits per $E_b/N_0$ point. The simulated BER closely tracks the analytical DBPSK expression: at 0 dB the simulation is 0.18363 versus 0.18394 theory, at 4 dB it is 0.04106 versus 0.04056, and at 8 dB it is 0.00092 versus 0.00091. This agreement validates the reference modem under its declared AWGN assumptions; it does not establish a fielded vehicular communication link.
+The repository pilot is simulation evidence, not measurement. For the parking target $(R,v)=(\SI{10}{m},\SI{3}{m/s})$ over 50 trials/SNR, range/velocity RMSE at $-25$ dB IF SNR are $\SI{0.0214}{m}$ and $\SI{0.0351}{m/s}$, compared with $\SI{7.42}{m}$ and $\SI{5.13}{m/s}$ at $-30$ dB. For the high-mobility capability profile at $R=\SI{20.28}{m}$ and $v=\SI{19.856}{m/s}$, the $-30$ dB range and velocity RMSE are approximately $\SI{0.0106}{m}$ and $\SI{0.0946}{m/s}$. The communication reference uses 32 chips/chirp and 300,000 bits per $E_b/N_0$ point; simulated DBPSK BER is 0.18363 versus 0.18394 theory at 0 dB and 0.00092 versus 0.00091 at 8 dB. These results validate the declared simulation paths, not a fielded vehicular link.
 
 \figPaperOneCapability
 \figPaperOnePilot
+\input{paper1_gate_ablation_section}
 
 \section{Discussion}
-The profile calculations expose the main design issue directly. The parking profile offers finer velocity resolution than the high-mobility capability profile but its unambiguous velocity support is only about 8.41 m/s. A high-speed operating state around 19.86 m/s therefore cannot be made valid by increasing SNR or repeating Monte-Carlo trials; the profile itself is outside its declared velocity region. Conversely, the high-mobility profile expands velocity support to approximately 48.67 m/s while using a shorter repetition interval and a larger IF sampling burden.
+The profile calculations show why physical support must be separated from stochastic performance. The parking profile offers fine range and velocity resolution but only about 8.41 m/s unambiguous radial-velocity support; a state near 19.86 m/s cannot be made representable by increasing SNR or Monte-Carlo sample count. The high-mobility profile expands this support to approximately 48.67 m/s at greater sampling burden.
 
-This motivates a separation of responsibilities. The physical layer should first answer whether a configuration can represent the state at all. Only then should communication BER, sensing RMSE, interference, synchronization residuals, or probabilistic QoS be used to decide among the admissible actions. The later robust-selection study in this repository builds on this gate but is intentionally treated as a separate paper: Paper 1 establishes the physical configuration problem, whereas the reliability-qualification paper studies finite-sample robust selection and its reliability--availability--computation trade-off.
+The ablation makes the architectural point stronger than profile calculations alone. Conditioning on the 132 states for which at least one declared action is physically valid, the capability-blind selector is valid in only 18 cases and invalid in 114 despite an available valid alternative. These 114 cases are recoverable configuration-selection errors, not globally impossible states. The gated selector returns a valid action in all 132 supportable states. Across the full 238-state boundary-stress grid, 220 ungated selections are invalid, but that secondary 92.44\% statistic includes 106 states outside the support of the complete action set and is therefore not a field-prevalence estimate.
 
-The communication pilot gives a complementary warning. At $E_b/N_0=8$ dB, the reference BER is about $9\times10^{-4}$ with zero residual frequency error, but rises to about 0.032 at a 5.1-kHz residual-frequency scale. This does not imply that high mobility inevitably produces that error; rather, it demonstrates that synchronization and Doppler compensation must be explicitly represented when a high-mobility PC-FMCW configuration is evaluated.
+The zero-invalid gated result is expected from the definition of the admissibility layer; the informative counterfactual is that removing only this layer while retaining the same action set, nominal QoS screen, and resource ranking creates 114 recoverable invalid decisions. The experiment does not claim that all other ISAC controllers are capability blind. It isolates the consequence of allowing ranking to operate on actions whose waveform cannot represent the state.
+
+Accordingly, the novelty claim is not the FMCW equations themselves and not adaptive waveform selection in general. It is the explicit decision architecture that maps known capability relations into a state-dependent admissible action set before finite PC-FMCW ranking, together with a controlled ablation that quantifies the failure mode when this stage is omitted. Reliability under uncertain SNR, Doppler/synchronization, interference, or state estimation is a separate question and belongs to the subsequent reliability study.
 
 \section{Limitations and Claim Boundaries}
-This work is a PHY-level simulation study. The parking profile parameters are grounded in published Texas Instruments reference-design documentation, while the high-mobility profile is a composite capability reference and is not presented as a commercial preset. SNR, $E_b/N_0$, residual frequency error, interference, and phase-noise variables are controlled simulation quantities. The pilot results are not RF measurements. The paper also does not claim trajectory prediction, ego-motion planning, packet scheduling, beam management, standards compliance, or embedded-ECU timing. The resource dimensions of the finite action space are interpretable control indices; they are not a measured energy model.
+This is a PHY-level model/simulation study. The boundary-aware grid is intentionally constructed to stress profile transitions and must not be interpreted as a distribution of real driving states. The parking parameters are grounded in published Texas Instruments reference-design documentation; the high-mobility profile is a composite capability reference and is not a commercial preset. Pilot results are not RF measurements. The paper does not claim trajectory prediction, planning, scheduling, beam management, standards compliance, embedded-ECU timing, universal superiority, or real-world reliability. The resource dimensions are interpretable control indices rather than measured energy.
 
 \section{Conclusion}
-This paper presented a physics-first configuration framework for 77-GHz PC-FMCW ISAC in high-mobility vehicular links. The central result is structural: profile capability must be checked before stochastic QoS qualification. Source-grounded calculations show that a short-range parking profile can provide approximately 0.175-m range resolution while supporting only about 8.41 m/s monostatic unambiguous radial velocity, whereas a composite high-mobility capability profile extends that support to approximately 48.67 m/s. Pilot simulations validate the sensing and DBPSK reference paths under their declared assumptions and demonstrate why synchronization residuals become a material communication impairment at high Doppler scales. The resulting 54-action space provides an interpretable foundation for subsequent reliability-constrained adaptation, while preserving a strict distinction between deterministic physical infeasibility and stochastic performance failure.
+This paper formulated deterministic FMCW range--velocity representability as a hard first-stage admissibility layer for finite-action 77-GHz PC-FMCW ISAC configuration selection. On the declared boundary-aware stress grid, 132 states admit at least one valid action; without the capability filter, 114 of these 132 supportable states (86.36\%) receive an unsupported selection despite a valid alternative, whereas gated selection returns physically valid actions in all 132. This controlled counterfactual, rather than the standard FMCW equations themselves, is the central evidence for preventing QoS/resource ranking from operating on physically unsupported actions. Source-grounded profile calculations and pilot simulations provide the supporting PHY context while preserving strict simulation/hardware boundaries. The resulting design principle is deliberately ordered: deterministic physical admissibility first, stochastic reliability qualification second.
 
 \bibliographystyle{IEEEtran}
 \bibliography{paper1_references}

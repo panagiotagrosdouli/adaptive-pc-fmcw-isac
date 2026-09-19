@@ -1,10 +1,12 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+pytest-of-root/
 .venv/
 venv/
 build/
 dist/
+pip-*/
 *.egg-info/
 artifacts/*.json
 artifacts/*.csv

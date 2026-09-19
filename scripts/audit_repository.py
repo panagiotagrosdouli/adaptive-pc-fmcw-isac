@@ -17,6 +17,20 @@ from pcfmcw_isac.publication_protocol import FROZEN_PROTOCOL_V1
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Build/install tools may honor TMPDIR by creating ephemeral directories inside
+# the checkout.  They are neither repository inputs nor generated research
+# evidence and must not make the audit depend on the caller's temp-directory
+# configuration.
+IGNORED_PATH_PARTS = {".git", ".venv", "venv", "build", "dist", "pytest-of-root"}
+
+
+def _is_ignored(path: Path) -> bool:
+    relative_parts = path.relative_to(ROOT).parts
+    return any(
+        part in IGNORED_PATH_PARTS or part.startswith("pip-")
+        for part in relative_parts
+    )
+
 
 class AuditFailure(RuntimeError):
     pass
@@ -36,7 +50,7 @@ def load_json(path: Path):
 
 def audit_all_json() -> None:
     for path in sorted(ROOT.rglob("*.json")):
-        if any(part in {".git", ".venv", "venv", "build", "dist"} for part in path.parts):
+        if _is_ignored(path):
             continue
         load_json(path)
 
@@ -169,7 +183,7 @@ def audit_repo_text_hygiene() -> None:
     for path in sorted(ROOT.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in {".py", ".md", ".tex", ".yml", ".yaml", ".toml"}:
             continue
-        if any(part in {".git", ".venv", "venv", "build", "dist"} for part in path.parts):
+        if _is_ignored(path):
             continue
         text = path.read_text(encoding="utf-8", errors="strict")
         for marker in markers:

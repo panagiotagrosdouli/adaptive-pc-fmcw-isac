@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_repository_audit():
+    spec = importlib.util.spec_from_file_location(
+        "repository_audit", ROOT / "scripts" / "audit_repository.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_all_paper_tex_files_are_free_of_known_stale_submission_claims():
@@ -29,3 +40,10 @@ def test_submission_manifest_does_not_duplicate_sources():
         assert not entry.startswith("/")
         assert ".." not in Path(entry).parts
         assert (ROOT / "paper" / entry).is_file(), entry
+
+
+def test_repository_audit_ignores_ephemeral_tool_directories():
+    audit = _load_repository_audit()
+    assert audit._is_ignored(ROOT / "pip-build-env-abc" / "dependency.py")
+    assert audit._is_ignored(ROOT / "pytest-of-root" / "test.json")
+    assert not audit._is_ignored(ROOT / "src" / "pcfmcw_isac" / "models.py")

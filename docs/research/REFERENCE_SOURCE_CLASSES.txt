@@ -1,0 +1,4 @@
+IEEE publisher metadata
+TU Delft institutional research/repository metadata
+NIST/PubMed metadata
+Texas Instruments manufacturer reference-design documentation

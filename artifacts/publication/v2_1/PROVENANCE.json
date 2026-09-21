@@ -1,0 +1,24 @@
+{
+  "protocol_id": "pcfmcw_isac_paper_v2_1",
+  "workflow": "Frozen Publication V2.1 Final",
+  "workflow_run_id": 33967030983,
+  "git_sha": "1b2100c11b6d4a7b6213777fd2da85e22601154b",
+  "main_final_artifact": {
+    "artifact_id": 9970334505,
+    "name": "frozen-publication-v2-1-1b2100c11b6d4a7b6213777fd2da85e22601154b-33967030983",
+    "sha256": "31daf1b571c84e4c38380cc8e7d03715eb06d03d7d9ff3e151c49184b5ebdd79"
+  },
+  "e9_e11_artifact": {
+    "artifact_id": 9970434665,
+    "name": "frozen-publication-v2-1-e9-e11-1b2100c11b6d4a7b6213777fd2da85e22601154b-33967030983",
+    "sha256": "1aeabd05526bfda796cdebb0df45214c2a7c0f665044faa01dfbd7d8244bb722"
+  },
+  "main_evidence_class": "FROZEN_PUBLICATION_V2_1_SIMULATION_CANDIDATE_NOT_HARDWARE_MEASUREMENT",
+  "e9_e11_evidence_class": "FROZEN_PUBLICATION_V2_1_E9_E11_SIMULATION_NOT_HARDWARE_MEASUREMENT",
+  "notes": [
+    "All 20 seed shards completed successfully.",
+    "Aggregate statistics and structural paper-readiness gate completed successfully.",
+    "E9 feasible-region and E11 ablation job completed successfully.",
+    "Full raw result bundles are retained as immutable GitHub Actions artifacts; compact machine-readable summaries are committed to the repository."
+  ]
+}

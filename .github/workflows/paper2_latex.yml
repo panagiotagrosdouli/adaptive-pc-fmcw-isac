@@ -1,0 +1,78 @@
+name: Paper 2 IEEE LaTeX
+
+on:
+  pull_request:
+    paths:
+      - 'paper/paper2_ieee.tex'
+      - 'paper/manuscript_v2_1.tex'
+      - 'paper/final_abstract_conclusion_*.tex'
+      - 'paper/final_results_discussion.tex'
+      - 'paper/figures_submission.tex'
+      - 'paper/literature_positioning.tex'
+      - 'paper/*tables.tex'
+      - 'paper/references_*.bib'
+      - 'paper/PAPER2_*.md'
+      - '.github/workflows/paper2_latex.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'paper/paper2_ieee.tex'
+      - 'paper/manuscript_v2_1.tex'
+      - 'paper/final_abstract_conclusion_*.tex'
+      - 'paper/final_results_discussion.tex'
+      - 'paper/figures_submission.tex'
+      - 'paper/literature_positioning.tex'
+      - 'paper/*tables.tex'
+      - 'paper/references_*.bib'
+      - 'paper/PAPER2_*.md'
+      - '.github/workflows/paper2_latex.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: paper2-latex-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  build-paper2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers
+      - name: Build Paper 2
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error paper2_ieee.tex
+      - name: Check references and labels
+        working-directory: paper
+        run: |
+          set -euo pipefail
+          ! grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations|multiply defined|There were multiply-defined labels" paper2_ieee.log
+      - name: Check Paper 2 claim audit
+        run: test -s paper/PAPER2_CLAIM_AUDIT.md
+      - name: Check Paper 2 evidence manifest
+        run: test -s paper/PAPER2_EVIDENCE_MANIFEST.md
+      - name: Upload Paper 2 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper2-ieee-build
+          if-no-files-found: error
+          path: |
+            paper/paper2_ieee.pdf
+            paper/paper2_ieee.log
+            paper/paper2_ieee.tex
+            paper/manuscript_v2_1.tex
+            paper/figures_submission.tex
+            paper/literature_positioning.tex
+            paper/final_abstract_conclusion_abstract_only.tex
+            paper/final_abstract_conclusion_conclusion_only.tex
+            paper/final_results_discussion.tex
+            paper/results_v2_1_tables.tex
+            paper/supplemental_v2_1_tables.tex
+            paper/references_v2_1.bib
+            paper/references_submission.bib
+            paper/PAPER2_README.md
+            paper/PAPER2_CLAIM_AUDIT.md
+            paper/PAPER2_EVIDENCE_MANIFEST.md

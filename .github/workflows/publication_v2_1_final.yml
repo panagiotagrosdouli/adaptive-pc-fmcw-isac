@@ -1,0 +1,127 @@
+name: Frozen Publication V2.1 Final
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/publication-v2-1-final.trigger'
+
+jobs:
+  shard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .[dev]
+      - name: Run frozen seed shard
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          START=$((10000 + SHARD * 50))
+          python scripts/run_v2_1_shard.py \
+            --seed-start "$START" \
+            --n-seeds 50 \
+            --comm-bits 20000 \
+            --sensing-trials 3 \
+            --robust-draws 512 \
+            --output "artifacts/publication/shard_${SHARD}.json"
+      - name: Upload shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-1-shard-${{ matrix.shard }}-${{ github.sha }}
+          path: artifacts/publication/shard_${{ matrix.shard }}.json
+          retention-days: 90
+
+  aggregate:
+    needs: shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .[dev]
+      - name: Download all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: v2-1-shard-*-${{ github.sha }}
+          path: shards
+          merge-multiple: true
+      - name: Aggregate frozen v2.1 statistics
+        run: |
+          python scripts/aggregate_v2_1_shards.py \
+            --glob 'shards/shard_*.json' \
+            --output artifacts/publication/v2_1_final.json
+      - name: Record immutable provenance
+        run: |
+          python - <<'PY'
+          import json, os, platform, sys
+          from pathlib import Path
+          p = Path('artifacts/publication')
+          p.mkdir(parents=True, exist_ok=True)
+          data = {
+              'evidence_class': 'FROZEN_PUBLICATION_V2_1_SIMULATION_CANDIDATE_NOT_HARDWARE_MEASUREMENT',
+              'protocol_id': 'pcfmcw_isac_paper_v2_1',
+              'git_sha': os.environ.get('GITHUB_SHA'),
+              'run_id': os.environ.get('GITHUB_RUN_ID'),
+              'python': sys.version,
+              'platform': platform.platform(),
+              'n_seeds': 1000,
+              'seed_start': 10000,
+              'comm_bits': 20000,
+              'sensing_trials': 3,
+              'robust_draws': 512,
+              'bootstrap_resamples': 10000,
+          }
+          (p/'v2_1_final_provenance.json').write_text(json.dumps(data, indent=2))
+          PY
+      - name: Upload final benchmark artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-publication-v2-1-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/publication/v2_1_final.json
+            artifacts/publication/v2_1_final_provenance.json
+          retention-days: 90
+      - name: Enforce structural paper-readiness gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d = json.loads(Path('artifacts/publication/v2_1_final.json').read_text())
+          gate = d['sanity_gate']
+          print(gate)
+          if not gate['paper_ready_structural_gate']:
+              raise SystemExit('Structural paper-readiness gate failed; artifacts retained for diagnosis.')
+          PY
+
+  e9_e11:
+    needs: aggregate
+    if: always() && needs.aggregate.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .[dev]
+      - name: Run frozen E9 feasible regions and E11 ablations
+        run: python scripts/run_v2_1_e9_e11.py --output artifacts/publication/v2_1_e9_e11.json
+      - name: Upload E9/E11 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-publication-v2-1-e9-e11-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/publication/v2_1_e9_e11.json
+          retention-days: 90

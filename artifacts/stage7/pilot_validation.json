@@ -1,0 +1,86 @@
+{
+  "status": "PILOT_SIMULATION_EVIDENCE_NOT_MEASUREMENT",
+  "seed_family": "20263xxx-20266xxx",
+  "claim_boundary": "Hardware/chirp constants are literature-grounded. SNR, Eb/N0 and residual frequency error are controlled simulation variables. These are not measured RF results and are not yet the frozen large-seed paper run.",
+  "parking_profile": {
+    "carrier_hz": 77000000000.0,
+    "bandwidth_hz": 858000000.0,
+    "chirp_duration_s": 0.0000256,
+    "chirp_repetition_s": 0.0001158,
+    "sample_rate_hz": 10000000.0,
+    "samples_per_chirp": 256,
+    "n_chirps": 64,
+    "derived": {
+      "range_resolution_m": 0.1747042296037296,
+      "positive_if_max_range_m": 22.36214138927739,
+      "velocity_resolution_mps": 0.2626705894763699,
+      "max_unambiguous_velocity_mps": 8.405458863243837
+    },
+    "pilot_target": {"range_m": 10.0, "radial_velocity_mps": 3.0},
+    "pilot_trials_per_snr": 50,
+    "sensing": [
+      {"snr_db": -40, "range_rmse_m": 7.98657093765605, "velocity_rmse_mps": 5.759809516871395, "within_one_range_resolution": 0.02, "within_one_velocity_resolution": 0.06},
+      {"snr_db": -35, "range_rmse_m": 7.469601697843925, "velocity_rmse_mps": 5.061580020453629, "within_one_range_resolution": 0.04, "within_one_velocity_resolution": 0.10},
+      {"snr_db": -30, "range_rmse_m": 7.419712445498573, "velocity_rmse_mps": 5.128048247451126, "within_one_range_resolution": 0.24, "within_one_velocity_resolution": 0.22},
+      {"snr_db": -25, "range_rmse_m": 0.021419180303543034, "velocity_rmse_mps": 0.03511432747957005, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -20, "range_rmse_m": 0.011509497989177652, "velocity_rmse_mps": 0.03010969084436352, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -15, "range_rmse_m": 0.007848139533852671, "velocity_rmse_mps": 0.022901985226260933, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -10, "range_rmse_m": 0.005595149475658317, "velocity_rmse_mps": 0.02071177897825427, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0}
+    ]
+  },
+  "high_mobility_profile": {
+    "carrier_hz": 77000000000.0,
+    "bandwidth_hz": 1000000000.0,
+    "chirp_duration_s": 0.0000200,
+    "chirp_repetition_s": 0.0000200,
+    "sample_rate_hz": 37500000.0,
+    "samples_per_chirp": 750,
+    "n_chirps": 128,
+    "derived": {
+      "range_resolution_m": 0.149896229,
+      "positive_if_max_range_m": 56.211085875,
+      "velocity_resolution_mps": 0.7604313565340908,
+      "max_unambiguous_velocity_mps": 48.66760681818181
+    },
+    "pilot_target": {"range_m": 20.28, "radial_velocity_mps": 19.8563835818, "origin": "speed derived from published 5.1 kHz one-way Doppler benchmark at 77 GHz"},
+    "pilot_trials_per_snr": 20,
+    "sensing": [
+      {"snr_db": -35, "range_rmse_m": 11.038882878074524, "velocity_rmse_mps": 27.02866578643322, "within_one_range_resolution": 0.60, "within_one_velocity_resolution": 0.60},
+      {"snr_db": -30, "range_rmse_m": 0.010605649149062124, "velocity_rmse_mps": 0.0945782200759243, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -25, "range_rmse_m": 0.00016495683529262238, "velocity_rmse_mps": 0.09357941313015523, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -20, "range_rmse_m": 0.000190740006406566, "velocity_rmse_mps": 0.0873470529331703, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -15, "range_rmse_m": 0.0001985919121096913, "velocity_rmse_mps": 0.08516831191363751, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0},
+      {"snr_db": -10, "range_rmse_m": 0.0001985919121096913, "velocity_rmse_mps": 0.08516831191363751, "within_one_range_resolution": 1.0, "within_one_velocity_resolution": 1.0}
+    ]
+  },
+  "communication_reference": {
+    "modulation": "multi-chip DBPSK after chirp dechirp",
+    "chips_per_chirp": 32,
+    "raw_bit_rate_bps": 276338.5146804836,
+    "bits_per_ebn0_point": 300000,
+    "awgn_validation": [
+      {"ebn0_db": -2, "ber_sim": 0.26463, "ber_theory": 0.2660410855852929},
+      {"ebn0_db": 0, "ber_sim": 0.18363333333333334, "ber_theory": 0.18393972058572117},
+      {"ebn0_db": 2, "ber_sim": 0.10332333333333334, "ber_theory": 0.1024848421276144},
+      {"ebn0_db": 4, "ber_sim": 0.041063333333333334, "ber_theory": 0.04055753839216114},
+      {"ebn0_db": 6, "ber_sim": 0.009333333333333334, "ber_theory": 0.00933281228075946},
+      {"ebn0_db": 8, "ber_sim": 0.00092, "ber_theory": 0.0009094044480786029},
+      {"ebn0_db": 10, "ber_sim": 0.00002, "ber_theory": 0.000022699964881242427}
+    ],
+    "residual_frequency_sensitivity_at_8db": [
+      {"residual_frequency_hz": 0, "ber": 0.00090},
+      {"residual_frequency_hz": 100, "ber": 0.0008766666666666667},
+      {"residual_frequency_hz": 500, "ber": 0.0010466666666666667},
+      {"residual_frequency_hz": 1000, "ber": 0.0011366666666666667},
+      {"residual_frequency_hz": 2000, "ber": 0.005696666666666667},
+      {"residual_frequency_hz": 5000, "ber": 0.03212333333333333},
+      {"residual_frequency_hz": 5100, "ber": 0.03198}
+    ]
+  },
+  "pilot_interpretation": [
+    "The parking profile has about 0.175 m range resolution but only about 8.4 m/s monostatic unambiguous radial velocity.",
+    "The published 5.1 kHz one-way 77-GHz Doppler benchmark corresponds to about 19.86 m/s, outside the parking profile velocity region but inside the high-mobility capability profile.",
+    "The DBPSK reference Monte Carlo closely follows the analytical AWGN curve when residual frequency error is zero.",
+    "At 8 dB Eb/N0, residual frequency error near the published 5.1 kHz scale strongly degrades uncompensated DBPSK, motivating explicit synchronization/Doppler compensation rather than treating high mobility as a small perturbation."
+  ]
+}

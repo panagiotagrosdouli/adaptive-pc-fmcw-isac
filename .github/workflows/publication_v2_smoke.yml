@@ -1,0 +1,45 @@
+name: Publication V2 Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/publication-v2-smoke.trigger'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .[dev]
+      - name: Run tests
+        run: pytest -q
+      - name: Run frozen v2 smoke
+        run: python scripts/run_v2_smoke.py --output artifacts/publication/v2_smoke.json
+      - name: Record provenance
+        run: |
+          python - <<'PY'
+          import json, os, platform, sys
+          from pathlib import Path
+          p = Path('artifacts/publication')
+          p.mkdir(parents=True, exist_ok=True)
+          data = {
+              'evidence_class': 'PUBLICATION_V2_SMOKE_SIMULATION_NOT_FINAL_PAPER_RESULT',
+              'git_sha': os.environ.get('GITHUB_SHA'),
+              'run_id': os.environ.get('GITHUB_RUN_ID'),
+              'python': sys.version,
+              'platform': platform.platform(),
+          }
+          (p/'v2_smoke_provenance.json').write_text(json.dumps(data, indent=2))
+          PY
+      - name: Upload smoke artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-v2-smoke-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/publication/v2_smoke.json
+            artifacts/publication/v2_smoke_provenance.json
+          retention-days: 90

@@ -1,0 +1,67 @@
+{
+  "input_dir": "artifacts/research",
+  "artifacts": {
+    "uncertainty": {
+      "status": "PASS",
+      "errors": []
+    },
+    "stress": {
+      "status": "PASS",
+      "errors": []
+    },
+    "physics": {
+      "status": "PASS",
+      "errors": []
+    },
+    "pareto": {
+      "status": "PASS",
+      "errors": []
+    },
+    "ablations": {
+      "status": "PASS",
+      "errors": []
+    },
+    "mismatch": {
+      "status": "PASS",
+      "errors": []
+    },
+    "distribution-shift": {
+      "status": "PASS",
+      "errors": []
+    },
+    "runtime": {
+      "status": "PASS",
+      "errors": []
+    },
+    "full-metrics": {
+      "status": "PASS",
+      "errors": []
+    },
+    "reliability-targets": {
+      "status": "PASS",
+      "errors": []
+    },
+    "qos-sensitivity": {
+      "status": "PASS",
+      "errors": []
+    },
+    "confidence-maps": {
+      "status": "PASS",
+      "errors": []
+    },
+    "uncertainty-sources": {
+      "status": "PASS",
+      "errors": []
+    },
+    "reliability-calibration": {
+      "status": "PASS",
+      "errors": []
+    },
+    "action-space": {
+      "status": "PASS",
+      "errors": []
+    }
+  },
+  "errors": [],
+  "passed": true
+}

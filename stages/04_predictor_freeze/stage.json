@@ -1,0 +1,11 @@
+{
+  "id": "stage04",
+  "name": "Frozen Predictor Release",
+  "status": "BLOCKED",
+  "depends_on": ["stage03"],
+  "purpose": "Freeze the selected checkpoint and preprocessing identity before official-validation evaluation.",
+  "inputs": ["Stage-03 training manifest", "selected checkpoint", "preprocessing configuration"],
+  "outputs": ["frozen predictor release manifest"],
+  "acceptance_criteria": ["checkpoint is non-empty", "all inputs have SHA-256 identities", "official validation was not used for selection"],
+  "forbidden": ["post-freeze checkpoint replacement", "official-validation model selection", "unhashed preprocessing"]
+}

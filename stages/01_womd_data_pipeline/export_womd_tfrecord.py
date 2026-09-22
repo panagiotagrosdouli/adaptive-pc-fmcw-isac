@@ -13,6 +13,13 @@ import numpy as np
 
 HISTORY, FUTURE, CURRENT = 11, 80, 10
 
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
 def stable_dev(scenario_id: str, fraction: float) -> bool:
     u = int(hashlib.sha256(scenario_id.encode()).hexdigest()[:16], 16) / 2**64
     return u < fraction
@@ -35,7 +42,10 @@ def export(files: list[Path], output: Path, fixed_split: str|None, dev_fraction:
     rows={k:[] for k in keys}; seen=set(); rejected={"time_contract":0,"sdc_invalid":0,"non_vehicle":0,"invalid_window":0}
     for file in files:
         for raw in tf.data.TFRecordDataset(str(file)):
-            sc=scenario_pb2.Scenario.FromString(bytes(raw.numpy())); sid=str(sc.scenario_id); seen.add(sid)
+            sc=scenario_pb2.Scenario.FromString(bytes(raw.numpy())); sid=str(sc.scenario_id)
+            if not sid: raise RuntimeError(f"empty scenario_id in {file}")
+            if sid in seen: raise RuntimeError(f"duplicate scenario_id across input records: {sid}")
+            seen.add(sid)
             if int(sc.current_time_index)!=CURRENT: rejected["time_contract"]+=1; continue
             tracks=list(sc.tracks)
             if not 0 <= int(sc.sdc_track_index) < len(tracks): rejected["sdc_invalid"]+=1; continue
@@ -64,7 +74,7 @@ def export(files: list[Path], output: Path, fixed_split: str|None, dev_fraction:
       "sdc_future_xy":np.asarray(rows["sdc_future_xy"],np.float32),"history_valid":np.asarray(rows["history_valid"],bool),"future_valid":np.asarray(rows["future_valid"],bool),
       "scenario_id":np.asarray(rows["scenario_id"],str),"track_id":np.asarray(rows["track_id"],np.int64),"sdc_track_id":np.asarray(rows["sdc_track_id"],np.int64),"split":np.asarray(rows["split"],str)}
     output.parent.mkdir(parents=True,exist_ok=True); np.savez_compressed(output,**arrays)
-    return {"schema":"womd_predictive_connectivity_npz_v2","output":str(output),"samples":len(arrays["scenario_id"]),"source_scenarios":len(seen),"retained_scenarios":len(set(rows["scenario_id"])),"splits":{x:int(np.sum(arrays["split"]==x)) for x in np.unique(arrays["split"])},"rejected":rejected,"true_future_sdc_geometry":True,"history_steps":HISTORY,"future_steps":FUTURE}
+    return {"schema":"womd_predictive_connectivity_npz_v2","output":str(output),"output_sha256":sha256_file(output),"input_files":[{"path":str(path),"sha256":sha256_file(path)} for path in files],"samples":len(arrays["scenario_id"]),"source_scenarios":len(seen),"retained_scenarios":len(set(rows["scenario_id"])),"splits":{x:int(np.sum(arrays["split"]==x)) for x in np.unique(arrays["split"])},"rejected":rejected,"true_future_sdc_geometry":True,"history_steps":HISTORY,"future_steps":FUTURE}
 
 def main() -> int:
     p=argparse.ArgumentParser(); p.add_argument("--input",type=Path,nargs="+",required=True); p.add_argument("--output",type=Path,required=True); p.add_argument("--fixed-split",choices=["official_validation"]); p.add_argument("--development-fraction",type=float,default=.10); p.add_argument("--report",type=Path); a=p.parse_args()

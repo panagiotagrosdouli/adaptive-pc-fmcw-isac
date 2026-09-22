@@ -19,3 +19,7 @@ def test_future_relative_geometry_keeps_sdc_motion():
 
 def test_velocity_is_causal_finite_difference():
     h=np.array([[0.,0.],[1.,0.],[3.,0.]],np.float32); v=M.velocities(h,1.0); np.testing.assert_allclose(v,[[1.,0.],[1.,0.],[2.,0.]])
+
+def test_sha256_file_records_exact_input_bytes(tmp_path):
+    path=tmp_path/"shard.tfrecord"; path.write_bytes(b"official-womd-shard\n")
+    assert M.sha256_file(path)=="a411652dab7c1e0ae400f1555034af4f7f77ccefcf4089ec441a806871d8beaa"

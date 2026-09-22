@@ -1,0 +1,11 @@
+{
+  "id": "stage03",
+  "name": "Predictor Training Contract",
+  "status": "BLOCKED",
+  "depends_on": ["stage01"],
+  "purpose": "Validate leakage-free training/development ownership and freeze exact corpus/config identities before predictor training.",
+  "inputs": ["Stage-01 training NPZ", "Stage-01 development NPZ", "model configuration"],
+  "outputs": ["predictor training contract manifest"],
+  "acceptance_criteria": ["training and development scenario IDs are disjoint", "official validation is not used", "corpus and configuration hashes are recorded"],
+  "forbidden": ["official-validation tuning", "sample-level leakage", "unhashed model configuration"]
+}

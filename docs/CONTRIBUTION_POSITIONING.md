@@ -150,4 +150,4 @@ This repository currently represents a model-based and Monte-Carlo research stud
 
 ## One-sentence contribution statement
 
-> **We extend PC-FMCW ISAC from fixed-configuration functional feasibility to physics-gated, reliability-constrained PHY adaptation under high-mobility uncertainty, and characterize the operating region in which vehicular communication and sensing QoS can be jointly guaranteed.**
+> **We extend PC-FMCW ISAC from fixed-configuration functional feasibility to physics-gated, reliability-constrained PHY adaptation under high-mobility uncertainty, and characterize the evaluated operating region in which vehicular communication and sensing QoS satisfy the declared confidence-qualified simulation criterion.**

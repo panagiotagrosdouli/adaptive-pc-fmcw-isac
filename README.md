@@ -2,6 +2,12 @@
 
 A reproducible research framework for **high-mobility vehicular phase-coded FMCW integrated sensing and communication (PC-FMCW ISAC)**.
 
+## Paper status
+
+The repository contains an IEEEtran manuscript supported by a frozen, provenance-linked publication-v2.1 simulation study. The evidence is **model-based, analytical, statistical, and host-runtime evidence**; it is not a new RF hardware or field-measurement campaign. The paper does not claim standards compliance, production deployment, universal robustness, or embedded real-time operation.
+
+The primary scientific result is a **reliability--availability--computation trade-off** under the declared finite action set and evaluated uncertainty models. In particular, the robust B4 policy provides stronger selected-case reliability evidence while selecting fewer operating states than the deterministic B3 policy; the frozen paired benchmark does not support unconditional B4 superiority.
+
 ![Project overview](docs/project_overview.jpg)
 
 > **Research question:** Which PC-FMCW PHY configuration is physically feasible, and which feasible configuration should be selected when communication reliability and radar sensing quality must be maintained simultaneously under mobility and imperfect PHY knowledge?
@@ -14,7 +20,7 @@ This work builds on the established PC-FMCW sensing-and-communication literature
 
 The project studies an **RF/mmWave 77-GHz vehicular PC-FMCW ISAC PHY**, not the optical laser-headlamp/ADB system discussed in related work. Trajectory forecasting, ego-motion planning, packet/user scheduling, beam management, adaptive driving-beam illumination, and Hough tracking are outside the claimed contribution.
 
-> **Contribution in one sentence:** We extend PC-FMCW ISAC from fixed-configuration functional feasibility to physics-gated, reliability-constrained PHY adaptation under high-mobility uncertainty, and characterize the operating region in which vehicular communication and sensing QoS can be jointly supported.
+> **Contribution in one sentence:** We extend PC-FMCW ISAC from fixed-configuration functional feasibility to physics-gated, reliability-constrained PHY adaptation under high-mobility uncertainty, and characterize the evaluated operating region in which vehicular communication and sensing QoS can be jointly supported under the declared simulation and uncertainty model.
 
 See [`docs/CONTRIBUTION_POSITIONING.md`](docs/CONTRIBUTION_POSITIONING.md), [`docs/EVIDENCE_MAP.md`](docs/EVIDENCE_MAP.md), and [`paper/CLAIM_AUDIT.md`](paper/CLAIM_AUDIT.md).
 
@@ -168,7 +174,7 @@ B4 is **not** unconditionally superior to B3.
 - paired B4-B3 unconditional difference: approximately `-0.03942`;
 - 95% paired-bootstrap interval: approximately `[-0.04292, -0.03600]`.
 
-The supported interpretation is a **reliability--availability--computation trade-off**: B4 identifies a smaller confidence-qualified operating subset with stronger selected-case reliability evidence.
+The supported interpretation is a **reliability--availability--computation trade-off**: under the frozen evaluated simulation protocol, B4 identifies a smaller confidence-qualified operating subset with stronger selected-case reliability evidence. This is not a field-reliability guarantee or a claim of universal B4 superiority.
 
 ## Experiment families
 

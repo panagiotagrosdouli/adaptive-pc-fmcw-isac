@@ -242,6 +242,8 @@ A 2026 IEEE Wireless Communications article on AFDM-ISAC also emphasizes adaptiv
 
 These works support the relevance of the problem, but they do not establish PC-FMCW-specific priority.
 
+A July 2026 preprint on unified evaluation methodology for AI-native ISAC (Lemic et al., arXiv:2607.14806) is also conceptually relevant because it treats online adaptation under uncertainty and explicitly connects technical KPIs to availability, latency, overhead, and deployment validation stages. It strengthens the case that availability and computational cost should be reported alongside reliability, but it is a general evaluation methodology rather than a PC-FMCW physical-admissibility controller.
+
 ---
 
 ## Closest-work comparison

@@ -65,16 +65,14 @@ grid=major,major grid style={black!10}]
 \end{figure*}}
 
 \newcommand{\radarconfEvidenceTable}{%
-\begin{table*}[t]
+\begin{table}[t]
 \centering
-\caption{Evidence isolating the role of the physical/reliability layers and their computational cost. Finite-draw disagreement is measured against a nested 4096-draw Monte-Carlo comparator, not physical ground truth.}
+\caption{Ablation results on the supplemental bank.}
 \label{tab:radarconf-evidence}
-\begin{minipage}{0.47\textwidth}
-\centering
 \footnotesize
 \begin{tabular}{lcc}
 \toprule
-Ablation & Selection & Cond. joint QoS\\
+Variant & Selection & Cond. joint QoS\\
 \midrule
 FULL B4 & 12.50\% & 100.00\%\\
 No physics gate & 31.67\% & 0.00\%\\
@@ -82,21 +80,4 @@ No state uncertainty & 20.00\% & 80.83\%\\
 No joint constraint & 67.25\% & 85.50\%\\
 \bottomrule
 \end{tabular}
-\end{minipage}
-\hfill
-\begin{minipage}{0.50\textwidth}
-\centering
-\footnotesize
-\begin{tabular}{rrrr}
-\toprule
-Draws & Feas. disag. & Action disag. & B4 median\\
-\midrule
-64  & 0.583\% & 3.583\% & 32.17 ms\\
-128 & 0.333\% & 2.167\% & 63.81 ms\\
-256 & 0.083\% & 1.250\% & 127.19 ms\\
-512 & 0.000\% & 0.833\% & 251.04 ms\\
-\bottomrule
-\end{tabular}
-\end{minipage}
-\end{table*}}
-
+\end{table}}

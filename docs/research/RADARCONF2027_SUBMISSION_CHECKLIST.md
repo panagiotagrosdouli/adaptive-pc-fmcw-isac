@@ -9,6 +9,7 @@ Date: 2026-09-30
 - Bibliography: `paper/references_v2_1.bib`, `paper/references_submission.bib`
 - Source manifest: `paper/RADARCONF2027_SOURCE_MANIFEST.txt`
 - Candidate manuscript commit: `9544c83b9c1145f1c9e7e126ac0d7777618ad2a0`
+- Frozen branch: `radarconf2027-submission-candidate` (points to the candidate manuscript commit)
 - Dedicated CI: `.github/workflows/radarconf2027_latex.yml`
 
 ## Scientific claim to preserve
@@ -64,6 +65,7 @@ IEEE Radar Conference 2027 currently requires:
 - Submission-system abstract no longer than 100 words.
 - Author names, affiliations, and contact information on the first page.
 - Current full-paper deadline: 31 October 2026.
+- The conference currently states that papers cannot be updated after submission because review begins immediately; upload only the frozen, coauthor-approved PDF.
 
 The dedicated CI automatically fails if the PDF exceeds six pages or contains unresolved citations/references.
 

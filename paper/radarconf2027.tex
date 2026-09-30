@@ -121,6 +121,8 @@ Removing the physics gate is more severe: the evaluated ungated variant selects 
 
 Finite-draw calibration gives the computational side of the trade-off. Relative to the nested 4096-draw comparator, feasibility-decision disagreement decreases from 0.583\% at 64 draws to 0\% at 512 draws, while selected-action disagreement remains 0.833\% at 512 draws. On the unoptimized Python/Linux host, B4 median decision time rises from 32.17~ms at 64 draws to 251.04~ms at 512 draws; the 512-draw 95th percentile is 504.11~ms. These timings are not embedded-ECU claims.
 
+\radarconfEvidenceTable
+
 \subsection{Mismatch exposes the limit of robustness}
 
 B4 remains useful under several moderate mismatches in the tested banks. With residual CFO larger than assumed, or actual radial speed above the nominal Doppler condition, B4 preserves higher joint QoS than B3. Under interference under-modeling from assumed INR $-10$~dB to actual 0~dB, B4 reaches 86\% joint QoS while B3 falls to 18\%. However, at actual INR of 10--20~dB both policies fail; when the controller assumes 12~dB SNR but the actual value is 8~dB, B4 falls to 17\%, and at 6~dB both fail. The reliability claim is therefore conditional on the uncertainty model representing the operating error with reasonable fidelity.

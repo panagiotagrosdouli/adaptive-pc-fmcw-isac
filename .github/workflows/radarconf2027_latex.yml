@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - radarconf2027-ci-verify-v3
     paths:
       - 'paper/radarconf2027.tex'
       - 'paper/radarconf2027_figures.tex'
@@ -20,10 +21,6 @@ on:
       - 'paper/RADARCONF2027_SOURCE_MANIFEST.txt'
       - '.github/workflows/radarconf2027_latex.yml'
   workflow_dispatch:
-
-concurrency:
-  group: radarconf2027-latex-${{ github.repository }}
-  cancel-in-progress: true
 
 jobs:
   latex:

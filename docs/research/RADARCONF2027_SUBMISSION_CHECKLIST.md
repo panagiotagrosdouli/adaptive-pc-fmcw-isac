@@ -82,7 +82,7 @@ The table-enhanced candidate immediately preceding the final provenance-citation
 - no overfull-box warning reported;
 - only non-fatal underfull-box warnings.
 
-Candidate v3 was independently rebuilt from the frozen manuscript sources with IEEEtran/BibTeX. The build is 4 pages, has no unresolved citations or references, and reports no overfull/underfull box warnings in the final pass. Visual inspection of all four rendered pages found no clipping, overlap, or broken glyphs. The locally validated PDF SHA-256 is `60b60bc0d528755832992e6e55730deb8ad6c392fe749c09d7ee3897b83b9949`.
+Candidate v3 was independently rebuilt from the frozen manuscript sources with IEEEtran/BibTeX. The build is 4 pages, has no unresolved citations or references, and reports no overfull/underfull box warnings in the final pass. Visual inspection of all four rendered pages found no clipping, overlap, or broken glyphs. The exact-source local rebuild was also checked against the Git blob SHAs of all four frozen source files. The validated PDF SHA-256 is `9644d238fed2b36a4df548cf84295e7117cd9ac0dfb6ba8f5d62bc26aec7c10d`.
 
 ## Human-only items before upload
 

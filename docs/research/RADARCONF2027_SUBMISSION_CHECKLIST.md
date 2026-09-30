@@ -8,9 +8,9 @@ Date: 2026-09-30
 - Compact figures/tables: `paper/radarconf2027_figures.tex`
 - Bibliography: `paper/references_v2_1.bib`, `paper/references_submission.bib`
 - Source manifest: `paper/RADARCONF2027_SOURCE_MANIFEST.txt`
-- Candidate manuscript commit: `d8cdae805ff672b4b74b7d251e6d38e88829e983`
-- Frozen branch: `radarconf2027-submission-candidate-v2` (current candidate; fixes the provenance citation command)
-- Superseded freeze: `radarconf2027-submission-candidate` at `9544c83b9c1145f1c9e7e126ac0d7777618ad2a0`
+- Candidate manuscript commit: `0a21acb10c6e674689412d17a189f32b68a2c1c7`
+- Frozen branch: `radarconf2027-submission-candidate-v3` (current candidate; compact ablation table and corrected provenance citation)
+- Superseded freezes: `radarconf2027-submission-candidate` and `radarconf2027-submission-candidate-v2`
 - Dedicated CI: `.github/workflows/radarconf2027_latex.yml`
 
 ## Scientific claim to preserve
@@ -82,7 +82,7 @@ The table-enhanced candidate immediately preceding the final provenance-citation
 - no overfull-box warning reported;
 - only non-fatal underfull-box warnings.
 
-A final rebuild is required for candidate commit `d8cdae805ff672b4b74b7d251e6d38e88829e983`. It contains the same paper as the prior 4-page validated build plus the corrected source-grounded profile citation.
+Candidate v3 was independently rebuilt from the frozen manuscript sources with IEEEtran/BibTeX. The build is 4 pages, has no unresolved citations or references, and reports no overfull/underfull box warnings in the final pass. Visual inspection of all four rendered pages found no clipping, overlap, or broken glyphs. The locally validated PDF SHA-256 is `60b60bc0d528755832992e6e55730deb8ad6c392fe749c09d7ee3897b83b9949`.
 
 ## Human-only items before upload
 
@@ -98,4 +98,4 @@ A final rebuild is required for candidate commit `d8cdae805ff672b4b74b7d251e6d38
 
 ## Current status
 
-**SUBMISSION CANDIDATE v2 — technically mature, awaiting the final CI rebuild and human author metadata.**
+**SUBMISSION CANDIDATE v3 — independently validated at 4 pages; awaiting human author metadata and the venue's final PDF compliance/upload step.**

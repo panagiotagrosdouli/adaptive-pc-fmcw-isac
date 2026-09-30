@@ -115,7 +115,7 @@ The uncertainty sweep supports the same interpretation. At zero uncertainty, B3 
 
 \subsection{The physical gate and confidence rule are consequential}
 
-Ablations separate hard infeasibility from ordinary robustness. On the supplemental bank, FULL\_B4 selects 12.50\% with 100\% observed conditional joint QoS. Removing state uncertainty expands selection to 20.00\% but lowers conditional joint QoS to 80.83\%. Removing the joint constraint expands selection to 67.25\% with 85.50\% conditional joint QoS.
+Table~\ref{tab:radarconf-evidence} summarizes the ablations that separate hard infeasibility from ordinary robustness. On the supplemental bank, FULL\_B4 selects 12.50\% with 100\% observed conditional joint QoS. Removing state uncertainty expands selection to 20.00\% but lowers conditional joint QoS to 80.83\%. Removing the joint constraint expands selection to 67.25\% with 85.50\% conditional joint QoS.
 
 Removing the physics gate is more severe: the evaluated ungated variant selects 31.67\% of states but obtains 0\% joint QoS. This result is specific to the frozen action set and does not imply that every ungated optimizer must fail; it shows that physically unsupported profiles can corrupt the ranking if they are allowed to compete with admissible actions.
 

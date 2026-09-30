@@ -11,7 +11,11 @@ The standalone Paper 1 bibliography contains only sources used by the manuscript
 - Kumbul et al., IEEE TMTT 2023 coherent MIMO PC-FMCW, DOI 10.1109/TMTT.2022.3228950.
 - Kumbul et al., IRS 2023 performance analysis for joint sensing/communication, DOI 10.23919/IRS57608.2023.10172426.
 - Kumbul et al., IEEE JC&S 2024 automotive PC-FMCW interference mitigation, DOI 10.1109/JCS61227.2024.10646233.
-- Temiz et al., ICC 2026 radar-centric ISAC with dynamic chirp-duration, bandwidth, and phase-coding reconfiguration, DOI 10.1109/ICC59461.2026.11586917.
+- Uysal, IEEE TVT 2020, “Phase-Coded FMCW Automotive Radar: System Design and Interference Mitigation,” DOI 10.1109/TVT.2019.2953305.
+- Uysal and Orru, IEEE Radar Conference 2020, “Phase-Coded FMCW Automotive Radar: Application and Challenges,” DOI 10.1109/RADAR42522.2020.9114798.
+- Zhang et al., ICCC Workshops 2025, “Waveform Design for Vital Signs Detection in Integrated Sensing and Communication System,” DOI 10.1109/ICCCWorkshops67136.2025.11148186.
+- Xing et al., Sensors 2025, “A Phase-Coded FMCW-Based Integrated Sensing and Communication System Design for Maritime Search and Rescue,” DOI 10.3390/s25175403.
+- Temiz et al., ICC 2026, “Improved Data Rates for Radar-centric ISAC with Index and Phase Modulations,” DOI 10.1109/ICC59461.2026.11586917. The paper also describes dynamic reconfiguration of chirp duration, bandwidth, and phase coding; the title above is the verified bibliographic title.
 
 ## Adaptive / cognitive radar prior art checked during the novelty pass
 

@@ -28,3 +28,11 @@ PC-FMCW; integrated sensing and communication; automotive radar; high mobility; 
 - Current official full-paper deadline: **31 October 2026**.
 - Conference: IEEE Radar Conference 2027, Bangalore, India, 1--6 May 2027.
 - Official pages: https://radarconf2027.org/paper-submission/ and https://radarconf2027.org/
+
+## Suggested topic alignment
+
+Primary topic alignment from the public Call for Papers: **SPECTRUM — ISAC & Convergence (Advanced ISAC waveforms)**.
+
+Secondary alignment: **Cognitive Autonomy — self-optimizing radar resource management**, because the paper adapts a finite radar/communication PHY action set under uncertainty.
+
+The public conference pages currently link to EDAS, but the automated audit cannot inspect the authenticated EDAS track menu. Confirm the exact portal track label manually before the final upload.

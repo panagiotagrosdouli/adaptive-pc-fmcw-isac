@@ -1,6 +1,6 @@
 # IEEE submission readiness audit
 
-Status: source compiles reproducibly under the repository Manuscript LaTeX Audit, with bibliography resolution and table-overflow checks already passing on the current manuscript line.
+Status: manuscript content and literature positioning have undergone a deep 2026-09-30 audit. Source compilation and bibliography checks are enforced by repository CI; the newest literature-update commits must complete the same workflows before the package is considered frozen.
 
 ## Verified
 
@@ -16,7 +16,7 @@ Status: source compiles reproducibly under the repository Manuscript LaTeX Audit
 
 1. **Target venue must be fixed before final packaging.** The manuscript currently uses `\\documentclass[journal]{IEEEtran}`. Do not switch to `conference` unless the selected venue requires the IEEE conference template.
 2. **Author metadata is intentionally anonymous.** Replace `Anonymous Author(s)` and the temporary internal `\\thanks{...}` text only when the venue's blind-review policy and author list are known.
-3. **Reference coverage needs a venue-level scholarly audit.** The current bibliography contains four core provenance/positioning references. Compilation is clean, but bibliographic completeness is a scientific-review issue rather than a LaTeX-validity issue.
+3. **Deep scholarly positioning audit completed; final venue-level bibliography verification remains.** The 2026-09-30 audit now covers the closest recent PC-FMCW/FMCW ISAC, synchronization, adaptive waveform, and robust-ISAC papers, including Temiz et al. TCOM 2026 and Wang et al. TSP 2024. Before submission, re-check publisher metadata and venue formatting for every cited entry.
 4. **Final PDF compliance must be checked with the venue-prescribed IEEE tool.** Use IEEE LaTeX Analyzer for source validation and IEEE PDF Checker/PDF eXpress when required by the venue. Confirm embedded/subset fonts, permitted PDF version, no security restrictions, and venue-specific metadata.
 5. **Final source ZIP should contain only files actually required by `manuscript_v2_1.tex` plus the bibliography and any figures.** Do not include CI trigger files, build products, logs, repository artifacts, or reviewer-only working files unless the venue requests them.
 
@@ -31,3 +31,9 @@ Status: source compiles reproducibly under the repository Manuscript LaTeX Audit
 - `paper/references_v2_1.bib`
 
 No figures are currently required by the integrated manuscript source.
+
+## Literature audit provenance
+
+- Deep audit: `docs/research/DEEP_LITERATURE_AUDIT_2026-09-30.md`
+- Final verdict: `docs/research/FINAL_LITERATURE_VERDICT.md`
+- Claim rule: do not use universal first-of-kind wording; position the contribution as the admissibility-first, confidence-qualified PC-FMCW operating-region architecture.

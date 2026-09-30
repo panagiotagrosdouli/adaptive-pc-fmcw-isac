@@ -4,7 +4,7 @@
 
 Physics-Gated Reliable Adaptation of Phase-Coded FMCW ISAC for High-Mobility Vehicular Operation
 
-## Submission-system abstract (97 words)
+## Submission-system abstract (90 words)
 
 High-mobility phase-coded FMCW integrated sensing and communication must choose configurations that are both physically admissible and reliable under uncertain operating state. We propose an admissibility-first controller for a 77-GHz vehicular PC-FMCW PHY. Range, IF-sampling, and unambiguous-velocity constraints prune a finite 54-action space before joint sensing/communication reliability qualification using a one-sided Wilson lower bound. The robust policy improves selected-case reliability but serves fewer states and requires more computation. The resulting contribution is an explicit reliability–availability–computation operating-region characterization with abstention when no configuration has sufficient evidence to support the declared reliability target.
 

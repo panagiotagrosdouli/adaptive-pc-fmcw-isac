@@ -21,10 +21,6 @@ on:
       - '.github/workflows/radarconf2027_latex.yml'
   workflow_dispatch:
 
-concurrency:
-  group: radarconf2027-latex-${{ github.repository }}
-  cancel-in-progress: true
-
 jobs:
   latex:
     runs-on: ubuntu-latest

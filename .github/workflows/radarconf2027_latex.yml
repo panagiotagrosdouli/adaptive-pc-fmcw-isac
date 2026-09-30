@@ -1,0 +1,84 @@
+name: RadarConf 2027 LaTeX
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'paper/radarconf2027.tex'
+      - 'paper/radarconf2027_figures.tex'
+      - 'paper/references_v2_1.bib'
+      - 'paper/references_submission.bib'
+      - 'paper/RADARCONF2027_SOURCE_MANIFEST.txt'
+      - '.github/workflows/radarconf2027_latex.yml'
+  pull_request:
+    paths:
+      - 'paper/radarconf2027.tex'
+      - 'paper/radarconf2027_figures.tex'
+      - 'paper/references_v2_1.bib'
+      - 'paper/references_submission.bib'
+      - 'paper/RADARCONF2027_SOURCE_MANIFEST.txt'
+      - '.github/workflows/radarconf2027_latex.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: radarconf2027-latex-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  latex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate source manifest
+        working-directory: paper
+        run: |
+          set -euo pipefail
+          while IFS= read -r source; do
+            [ -z "$source" ] && continue
+            test -f "$source" || { echo "Missing source: $source"; exit 1; }
+          done < RADARCONF2027_SOURCE_MANIFEST.txt
+
+      - name: Install TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers poppler-utils
+
+      - name: Build RadarConf manuscript
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error radarconf2027.tex
+
+      - name: Fail on unresolved citations or references
+        working-directory: paper
+        run: |
+          if grep -E "LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations" radarconf2027.log; then
+            echo "Unresolved citation/reference detected."
+            exit 1
+          fi
+
+      - name: Enforce six-page limit
+        working-directory: paper
+        run: |
+          pages="$(pdfinfo radarconf2027.pdf | awk '/^Pages:/ {print $2}')"
+          echo "RadarConf page count: ${pages}"
+          test -n "${pages}"
+          if [ "${pages}" -gt 6 ]; then
+            echo "RadarConf 2027 permits at most 6 pages including references."
+            exit 1
+          fi
+
+      - name: Report layout warnings
+        working-directory: paper
+        run: |
+          grep -E "Overfull \\hbox|Underfull \\hbox" radarconf2027.log || true
+
+      - name: Upload conference PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: radarconf2027-draft
+          if-no-files-found: error
+          path: |
+            paper/radarconf2027.pdf
+            paper/radarconf2027.log
+            paper/RADARCONF2027_SOURCE_MANIFEST.txt

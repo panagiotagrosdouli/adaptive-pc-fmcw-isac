@@ -73,13 +73,13 @@ These variables are kept explicit because they change physical support, communic
 \section{Reliability-Constrained Selection}
 
 Let $S$ denote the uncertain PHY state, including communication and sensing SNR, range, velocity, residual CFO/synchronization error, interference, and phase-noise state. The physical gate produces $\mathcal A_{\rm phys}(\hat S)\subseteq\mathcal A$. For each admissible action, uncertainty samples are drawn around the estimated state and the binary event
-\begin{equation}
-\mathcal E=
-\{\mathrm{BER}\le10^{-3},\;
-R_{\rm eff}\ge\SI{100}{kbps},\;
-\mathrm{RMSE}_R\le\SI{1}{m},\;
-\mathrm{RMSE}_v\le\SI{1}{m/s}\}
-\end{equation}
+\begin{align}
+\mathcal E=\{&
+\mathrm{BER}\le10^{-3},\;
+R_{\rm eff}\ge\SI{100}{kbps}, \nonumber\\
+&\mathrm{RMSE}_R\le\SI{1}{m},\;
+\mathrm{RMSE}_v\le\SI{1}{m/s}\}.
+\end{align}
 is evaluated.
 
 If $k$ of $N$ uncertainty draws satisfy $\mathcal E$, the empirical fraction $\hat p=k/N$ is not treated as a certificate. We instead use the one-sided Wilson lower bound \cite{brown2001binomial}

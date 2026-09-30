@@ -169,6 +169,12 @@ DOI: 10.48550/arXiv.2410.10591
 
 Uses online learning to select radar waveform bandwidth according to target/trajectory feedback.
 
+**Yazar et al., 2026 — arXiv**  
+"A Multi-Objective Learning Approach for Adaptive Waveform Selection in Integrated Sensing and Communications Systems"  
+DOI: 10.48550/arXiv.2603.14017
+
+Maps changing user-demand and channel conditions to Pareto-optimal ISAC waveform sets through multi-objective learning. This is direct evidence that adaptive waveform selection inside ISAC is itself prior art; it does not implement the PC-FMCW physical-admissibility and confidence-qualified abstention architecture studied here.
+
 **Novelty impact:** the word "adaptive" cannot carry the novelty claim. The contribution must be the structure and reliability semantics of the PC-FMCW decision process.
 
 ---
@@ -394,3 +400,7 @@ The paper should be sold as:
 > **A reliability-aware operating-region study for adaptive vehicular PC-FMCW ISAC, where physically impossible actions are removed before uncertainty-aware joint QoS qualification and the controller can abstain when the declared reliability is unsupported.**
 
 That is narrower than "adaptive PC-FMCW ISAC," but it is also substantially more defensible under expert review.
+
+## Very recent adjacent work (September 2026)
+
+Khan and Hanzo, “The ISAC Tradeoff Cliff: Fundamental Limits under Waveform Uncertainty and Finite Blocklength,” arXiv:2609.25589 (submitted 2026-09-22), develops an analytical reliability-driven sensing/communication trade-off under finite-blocklength decoding uncertainty. It is not an adaptive PC-FMCW control paper and does not remove the present gap, but it reinforces that reliability boundaries and trade-off regions are an active 2026 ISAC research direction. Because it is an extremely recent preprint, it is retained in the audit rather than made essential to the manuscript's core novelty argument.

@@ -18,3 +18,13 @@ PC-FMCW; integrated sensing and communication; automotive radar; high mobility; 
 - Confirm final PDF is 6 pages or fewer, including references.
 - Run the venue-prescribed IEEE PDF compliance check before upload.
 - Do not claim first-of-kind adaptive PC-FMCW or universal B4 superiority.
+
+## Official venue constraints checked 2026-09-30
+
+- IEEE standard two-column conference format, A4, English.
+- Paper length: 3--6 pages inclusive of figures, tables, and references; submissions over six pages are rejected.
+- Submission-system abstract: maximum 100 words; the draft above is 90 words.
+- First page must include authors, affiliations, and contact information.
+- Current official full-paper deadline: **31 October 2026**.
+- Conference: IEEE Radar Conference 2027, Bangalore, India, 1--6 May 2027.
+- Official pages: https://radarconf2027.org/paper-submission/ and https://radarconf2027.org/

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - radarconf2027-ci-verify
     paths:
       - 'paper/radarconf2027.tex'
       - 'paper/radarconf2027_figures.tex'

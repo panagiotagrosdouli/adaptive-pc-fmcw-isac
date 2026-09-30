@@ -8,8 +8,9 @@ Date: 2026-09-30
 - Compact figures/tables: `paper/radarconf2027_figures.tex`
 - Bibliography: `paper/references_v2_1.bib`, `paper/references_submission.bib`
 - Source manifest: `paper/RADARCONF2027_SOURCE_MANIFEST.txt`
-- Candidate manuscript commit: `9544c83b9c1145f1c9e7e126ac0d7777618ad2a0`
-- Frozen branch: `radarconf2027-submission-candidate` (points to the candidate manuscript commit)
+- Candidate manuscript commit: `d8cdae805ff672b4b74b7d251e6d38e88829e983`
+- Frozen branch: `radarconf2027-submission-candidate-v2` (current candidate; fixes the provenance citation command)
+- Superseded freeze: `radarconf2027-submission-candidate` at `9544c83b9c1145f1c9e7e126ac0d7777618ad2a0`
 - Dedicated CI: `.github/workflows/radarconf2027_latex.yml`
 
 ## Scientific claim to preserve
@@ -81,7 +82,7 @@ The table-enhanced candidate immediately preceding the final provenance-citation
 - no overfull-box warning reported;
 - only non-fatal underfull-box warnings.
 
-A final rebuild is required for candidate commit `9544c83b9c1145f1c9e7e126ac0d7777618ad2a0` because it adds the missing provenance citation for the source-grounded short-range profile.
+A final rebuild is required for candidate commit `d8cdae805ff672b4b74b7d251e6d38e88829e983`. It contains the same paper as the prior 4-page validated build plus the corrected source-grounded profile citation.
 
 ## Human-only items before upload
 
@@ -97,4 +98,4 @@ A final rebuild is required for candidate commit `9544c83b9c1145f1c9e7e126ac0d77
 
 ## Current status
 
-**SUBMISSION CANDIDATE — technically mature, awaiting the final CI rebuild and human author metadata.**
+**SUBMISSION CANDIDATE v2 — technically mature, awaiting the final CI rebuild and human author metadata.**

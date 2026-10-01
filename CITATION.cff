@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software or research artifact, please cite it as below."
+title: "Physics-Gated Reliability-Constrained Adaptive PC-FMCW ISAC"
+type: software
+authors:
+  - family-names: "Grosdouli"
+    given-names: "Panagiota"
+version: "0.1.0"
+repository-code: "https://github.com/panagiotagrosdouli/adaptive-pc-fmcw-isac"
+url: "https://github.com/panagiotagrosdouli/adaptive-pc-fmcw-isac"
+keywords:
+  - integrated sensing and communication
+  - ISAC
+  - PC-FMCW
+  - FMCW radar
+  - vehicular communications
+  - adaptive PHY
+  - robust reliability

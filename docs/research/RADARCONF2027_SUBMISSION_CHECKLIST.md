@@ -84,11 +84,18 @@ The table-enhanced candidate immediately preceding the final provenance-citation
 
 Candidate v3 was independently rebuilt from the frozen manuscript sources with IEEEtran/BibTeX. The build is 4 pages, has no unresolved citations or references, and reports no overfull/underfull box warnings in the final pass. Visual inspection of all four rendered pages found no clipping, overlap, or broken glyphs. The exact-source local rebuild was also checked against the Git blob SHAs of all four frozen source files. The validated PDF SHA-256 is `9644d238fed2b36a4df548cf84295e7117cd9ac0dfb6ba8f5d62bc26aec7c10d`.
 
+## Author metadata
+
+- Author: Panagiota Grosdouli
+- Contact email: panagros1@ee.duth.gr
+- Affiliation: pending exact official wording
+- Current author-metadata freeze branch: `radarconf2027-submission-candidate-v4`
+
 ## Human-only items before upload
 
-- [ ] Insert actual author names.
+- [x] Insert actual author name.
 - [ ] Insert affiliations.
-- [ ] Insert corresponding-author email/contact details.
+- [x] Insert corresponding-author email/contact details.
 - [ ] Confirm author order with all coauthors.
 - [ ] Confirm all coauthors approve the final manuscript.
 - [ ] Confirm submission-system topic/track selection.

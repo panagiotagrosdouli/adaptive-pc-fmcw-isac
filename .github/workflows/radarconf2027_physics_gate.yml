@@ -1,0 +1,38 @@
+name: RadarConf 2027 Physics-Gate Candidate
+on:
+  pull_request:
+    paths:
+      - 'paper/radarconf2027_physics_gate.tex'
+      - 'paper/paper1_figures.tex'
+      - 'paper/paper1_references.bib'
+      - '.github/workflows/radarconf2027_physics_gate.yml'
+  workflow_dispatch:
+jobs:
+  conference-paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-base texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers poppler-utils
+      - name: Compile independent conference manuscript
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error radarconf2027_physics_gate.tex
+      - name: Verify references, labels and six-page limit
+        working-directory: paper
+        run: |
+          set -euo pipefail
+          ! grep -E 'LaTeX Warning: (Citation|Reference).*undefined|There were undefined references|There were undefined citations|multiply defined|There were multiply-defined labels' radarconf2027_physics_gate.log
+          pages="$(pdfinfo radarconf2027_physics_gate.pdf | awk '/^Pages:/ {print $2}')"
+          echo "Conference candidate page count: $pages"
+          test "$pages" -ge 3
+          test "$pages" -le 6
+      - name: Upload conference manuscript
+        uses: actions/upload-artifact@v4
+        with:
+          name: radarconf2027-physics-gate-candidate
+          if-no-files-found: error
+          path: |
+            paper/radarconf2027_physics_gate.pdf
+            paper/radarconf2027_physics_gate.log

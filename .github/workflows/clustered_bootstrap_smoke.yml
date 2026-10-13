@@ -1,0 +1,35 @@
+name: Supplemental Cluster Bootstrap Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/seed_clustered_bootstrap.py'
+      - 'tests/test_seed_clustered_bootstrap.py'
+      - '.github/workflows/clustered_bootstrap_smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  supplement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e '.[all]'
+      - name: Validate supplemental bootstrap unit tests
+        run: pytest -q tests/test_seed_clustered_bootstrap.py
+      - name: Generate tiny paired diagnostic simulation (not a publication estimate)
+        run: |
+          python scripts/run_e6_e12_benchmark.py --n-seeds 3 --comm-bits 2000 --sensing-trials 1 --output artifacts/ci/cluster_smoke_input.json
+      - name: Clustered bootstrap diagnostic
+        run: |
+          python scripts/seed_clustered_bootstrap.py --input artifacts/ci/cluster_smoke_input.json --output artifacts/ci/cluster_smoke_interval.json --n-resamples 500
+      - name: Upload supplemental diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplemental-cluster-bootstrap-smoke
+          if-no-files-found: error
+          path: |
+            artifacts/ci/cluster_smoke_input.json
+            artifacts/ci/cluster_smoke_interval.json

@@ -1,0 +1,53 @@
+name: Research Gap Pilot (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      cases_per_split:
+        description: 'Independent scenarios in each split'
+        required: true
+        default: '8'
+        type: choice
+        options: ['4', '8', '16', '32']
+      draws:
+        description: 'Monte Carlo draws per action for pilot'
+        required: true
+        default: '32'
+        type: choice
+        options: ['8', '32', '64']
+
+jobs:
+  receiver-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install package
+        run: python -m pip install -e '.[dev]'
+      - name: Validate research tests
+        run: python -m pytest -q tests/test_research_gap_methods.py tests/test_research_gap_smoke.py tests/test_pc_fmcw_research_pilot.py tests/test_coupled_if_research.py tests/test_coupled_if_census.py
+      - name: Run coupled IF diagnostic
+        run: |
+          python scripts/run_coupled_if_research.py --convention complex --output artifacts/research_gaps/coupled_if_complex.json
+          python scripts/run_coupled_if_research.py --convention positive --output artifacts/research_gaps/coupled_if_positive.json
+          python scripts/plot_coupled_if_research.py --output artifacts/research_gaps/if_feasibility_map.svg
+      - name: Run receiver-level pilot
+        run: |
+          python scripts/run_pc_fmcw_research_pilot.py --cases-per-split ${{ inputs.cases_per_split }} --draws ${{ inputs.draws }} --output artifacts/research_gaps/pc_fmcw_pilot.json
+      - name: Provenance
+        run: |
+          git rev-parse HEAD > artifacts/research_gaps/commit_sha.txt
+          python --version > artifacts/research_gaps/python_version.txt
+          python -m pip freeze > artifacts/research_gaps/dependencies.txt
+          sha256sum artifacts/research_gaps/*.json artifacts/research_gaps/*.svg > artifacts/research_gaps/SHA256SUMS.txt
+      - name: Archive real run outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-gap-pilot-${{ github.sha }}
+          path: artifacts/research_gaps/
+          retention-days: 30

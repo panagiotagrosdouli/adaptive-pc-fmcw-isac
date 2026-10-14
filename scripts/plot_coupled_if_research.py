@@ -11,7 +11,7 @@ from runpy import run_path
 census = run_path(str(Path(__file__).with_name("run_coupled_if_research.py")))["census"]
 
 def svg_map(convention="complex",guard_fraction=0.0):
-    # Census stores changed rows; reconstruct the exact same grid/feasibility.
+    # Reconstruct the exact canonical grid and apply the configured passband.
     from pcfmcw_isac.paper1_physics_gate_ablation import RANGE_GRID_M, VELOCITY_GRID_MPS
     from pcfmcw_isac.policy_evaluation import profile_registry
     from pcfmcw_isac.coupled_if_research import coupled_physics,nominal_complex_if,nominal_positive_if,IFPassband
@@ -23,7 +23,6 @@ def svg_map(convention="complex",guard_fraction=0.0):
     counts={"coupled_valid":0,"old_only":0,"unsupported":0}
     for r in RANGE_GRID_M:
         for v in VELOCITY_GRID_MPS:
-            old=(r,v) in ((x["range_m"],x["radial_velocity_mps"]) for x in [])
             # old value explicitly obtained through the original gate
             from pcfmcw_isac.publication_protocol import EvaluationState,is_physics_feasible
             s=EvaluationState(12.,10.,r,v,0.,None,0.,0.,0)
